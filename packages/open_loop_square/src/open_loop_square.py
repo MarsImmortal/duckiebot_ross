@@ -45,7 +45,7 @@ class Drive_Square:
             # Move forward for the specified side length
             self.move_forward(side_length)
 
-            # rospy.sleep(2)  
+            rospy.sleep(2)  
 
             # Turn the robot 90 degrees (adjust the angular velocity for the turn)
             self.turn_robot()
@@ -67,10 +67,10 @@ class Drive_Square:
         # Set the angular velocity to turn 90 degrees (adjust as needed)
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 2  # Adjust the angular velocity for a slower turn
+        self.cmd_msg.omega = 1  # Adjust the angular velocity for a slower turn
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
-        rospy.sleep(0.78)
+        rospy.sleep(1.6)
         self.stop_robot()  # Adjust sleep time for a 90-degree turn based on the turning speed
 
 
