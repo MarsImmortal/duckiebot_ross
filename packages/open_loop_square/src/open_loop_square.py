@@ -54,7 +54,7 @@ class Drive_Square:
     # Move the robot forward by a specified distance (side_length)
     def move_forward(self, distance):
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.2  # Forward velocity (adjust as needed)
+        self.cmd_msg.v = -0.2  # Forward velocity (adjust as needed)
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
