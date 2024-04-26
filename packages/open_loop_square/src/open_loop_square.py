@@ -3,7 +3,7 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import FSMState
- 
+
 class Drive_Square:
     def __init__(self):
         # Initialize global class variables
@@ -11,21 +11,21 @@ class Drive_Square:
 
         # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
-        
+
         # Initialize Pub/Subs
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
-        
+
     # Callback function to handle FSM state changes
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
-        
+
         # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
-            self.move_robot()  # Move the robot forward and backward
+            self.move_square()  # Move the robot in a square pattern
 
     # Sends zero velocities to stop the robot
     def stop_robot(self):
@@ -35,29 +35,40 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
 
-    # Move the robot forward and then backward by approximately 1 meter each
-    def move_robot(self):
-        # Forward movement (adjust velocity and sleep time for 1 meter)
+    # Move the robot in a square pattern
+    def move_square(self):
+        # Define the side length of the square (adjust as needed)
+        side_length = 1.0  # meters
+
+        # Move the robot forward and then turn 90 degrees four times to form a square
+        for _ in range(4):
+            # Move forward for the specified side length
+            self.move_forward(side_length)
+
+            # Turn the robot 90 degrees (adjust the angular velocity for the turn)
+            self.turn_robot()
+
+        # Stop the robot after completing the square
+        self.stop_robot()
+
+    # Move the robot forward by a specified distance (side_length)
+    def move_forward(self, distance):
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.2  # Forward velocity (adjust as needed)
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
-        rospy.loginfo("Moving Forward...")
-        rospy.sleep(5.0)  # Adjust sleep time based on the robot's speed and required distance (approximately 1 meter)
+        rospy.loginfo(f"Moving Forward by {distance} meters...")
+        rospy.sleep(distance / 0.2)  # Adjust sleep time based on the robot's speed and required distance
 
-        # Stop the robot before reversing
-        self.stop_robot()
-
-        # Backward movement (adjust velocity and sleep time for 1 meter)
+    # Turn the robot 90 degrees
+    def turn_robot(self):
+        # Set the angular velocity to turn 90 degrees (adjust as needed)
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = -0.2  # Backward velocity (adjust as needed)
-        self.cmd_msg.omega = 0.0
+        self.cmd_msg.v = 0.0
+        self.cmd_msg.omega = 1.0  # Angular velocity (adjust as needed)
         self.pub.publish(self.cmd_msg)
-        rospy.loginfo("Moving Backward...")
-        rospy.sleep(5.0)  # Adjust sleep time based on the robot's speed and required distance (approximately 1 meter)
-
-        # Stop the robot after completing the movement
-        self.stop_robot()
+        rospy.loginfo("Turning...")
+        rospy.sleep(1.57)  # Adjust sleep time based on the robot's turning speed (approximately 90 degrees)
 
     # Run the ROS node (spin forever)
     def run(self):
