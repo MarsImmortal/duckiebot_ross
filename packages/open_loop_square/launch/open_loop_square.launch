@@ -1,6 +1,6 @@
 <launch>
     <!-- vehicle name so it can work with any robot -->
     <group ns="$(env VEHICLE_NAME)">
-        <node pkg="open_loop_square" name="open_loop_square" type="open_loop_square.py" output="screen"/>
+        <node pkg="your_package_name" name="open_loop_square" type="open_loop_square.py" output="screen" cwd="/code/catkin_ws/src/duckiebot_ross/packages/open_loop_square/src"/>
     </group>
 </launch>
