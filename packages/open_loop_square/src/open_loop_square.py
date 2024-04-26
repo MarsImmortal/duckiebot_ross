@@ -64,10 +64,10 @@ class Drive_Square:
         # Set the angular velocity to turn 90 degrees (adjust as needed)
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 0.5  # Adjust the angular velocity for a slower turn
+        self.cmd_msg.omega = 2  # Adjust the angular velocity for a slower turn
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
-        rospy.sleep(1.57)  # Adjust sleep time for a 90-degree turn based on the turning speed
+        rospy.sleep(0.785)  # Adjust sleep time for a 90-degree turn based on the turning speed
 
 
     # Run the ROS node (spin forever)
