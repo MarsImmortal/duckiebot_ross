@@ -32,9 +32,6 @@ class Drive_Square:
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
  
-    # Spin forever but listen to message callbacks
-    def run(self):
-    	rospy.spin() # keeps node from exiting until node has shutdown
 
     # Robot drives in a square and then stops
     def move_robot(self):
@@ -58,6 +55,9 @@ class Drive_Square:
                 
         self.stop_robot()
 
+    # Spin forever but listen to message callbacks
+    def run(self):
+    	rospy.spin() # keeps node from exiting until node has shutdown
 if __name__ == '__main__':
     try:
         duckiebot_movement = Drive_Square()
