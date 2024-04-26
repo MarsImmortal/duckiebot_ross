@@ -60,7 +60,8 @@ class Drive_Square:
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
-        rospy.sleep(distance / 0.1)  # Adjust sleep time based on the robot's speed and required distance
+        rospy.sleep(distance / 0.1)
+        self.stop_robot()  # Adjust sleep time based on the robot's speed and required distance
 
     def turn_robot(self):
         # Set the angular velocity to turn 90 degrees (adjust as needed)
@@ -69,7 +70,8 @@ class Drive_Square:
         self.cmd_msg.omega = 1  # Adjust the angular velocity for a slower turn
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
-        rospy.sleep(1.57)  # Adjust sleep time for a 90-degree turn based on the turning speed
+        rospy.sleep(1.57)
+        self.stop_robot()  # Adjust sleep time for a 90-degree turn based on the turning speed
 
 
     # Run the ROS node (spin forever)
