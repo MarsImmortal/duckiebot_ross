@@ -6,61 +6,68 @@ from duckietown_msgs.msg import FSMState
  
 class Drive_Square:
     def __init__(self):
-        #Initialize global class variables
+        # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
 
-        #Initialize ROS node
+        # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
         
-        #Initialize Pub/Subs
-        self.pub = rospy.Publisher('/akandb/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
-        rospy.Subscriber('/akandb/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
+        # Initialize Pub/Subs
+        self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
+        rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
         
-    # robot only moves when lane following is selected on the duckiebot joystick app
+    # Callback function to handle FSM state changes
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
+        
+        # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
-            self.stop_robot()
-        elif msg.state == "LANE_FOLLOWING":            
-            rospy.sleep(1) # Wait for a sec for the node to be ready
-            self.move_robot()
- 
+            self.stop_robot()  # Stop the robot if in joystick control mode
+        elif msg.state == "LANE_FOLLOWING":
+            rospy.sleep(1)  # Wait for a second for the node to be ready
+            self.move_robot()  # Move the robot forward and backward
+
     # Sends zero velocities to stop the robot
     def stop_robot(self):
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
- 
+        rospy.loginfo("Robot Stopped")
 
-    # Robot drives in a square and then stops
+    # Move the robot forward and then backward by approximately 1 meter each
     def move_robot(self):
+        # Forward movement (adjust velocity and sleep time for 1 meter)
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.2  # Forward velocity (adjust as needed)
+        self.cmd_msg.omega = 0.0
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo("Moving Forward...")
+        rospy.sleep(5.0)  # Adjust sleep time based on the robot's speed and required distance (approximately 1 meter)
 
-        #YOUR CODE GOES HERE#
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.5 # striaght line velocity
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo("Forward!")
-        rospy.sleep(1) # straight line driving time
-        
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = -0.5 # striaght line velocity
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo("Backward!")
-        rospy.sleep(1) # straight line driving time
-        
-        ######################
-                
+        # Stop the robot before reversing
         self.stop_robot()
 
-    # Spin forever but listen to message callbacks
+        # Backward movement (adjust velocity and sleep time for 1 meter)
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = -0.2  # Backward velocity (adjust as needed)
+        self.cmd_msg.omega = 0.0
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo("Moving Backward...")
+        rospy.sleep(5.0)  # Adjust sleep time based on the robot's speed and required distance (approximately 1 meter)
+
+        # Stop the robot after completing the movement
+        self.stop_robot()
+
+    # Run the ROS node (spin forever)
     def run(self):
-    	rospy.spin() # keeps node from exiting until node has shutdown
+        rospy.spin()  # Keeps the node from exiting until shutdown
+
 if __name__ == '__main__':
     try:
+        # Create an instance of Drive_Square class
         duckiebot_movement = Drive_Square()
+        # Run the ROS node
         duckiebot_movement.run()
     except rospy.ROSInterruptException:
         pass
