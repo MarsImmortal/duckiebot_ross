@@ -45,6 +45,8 @@ class Drive_Square:
             # Move forward for the specified side length
             self.move_forward(side_length)
 
+            rospy.sleep(2)  
+
             # Turn the robot 90 degrees (adjust the angular velocity for the turn)
             self.turn_robot()
 
