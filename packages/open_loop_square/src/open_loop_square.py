@@ -23,7 +23,7 @@ class Drive_Square:
         # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
             self.stop_robot()  # Stop the robot if in joystick control mode
-        elif msg.state == "Custom mode":
+        elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
             self.move_square()  # Move the robot in a square pattern
 
