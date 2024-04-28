@@ -23,7 +23,7 @@ class Drive_Square:
         # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
             self.stop_robot()  # Stop the robot if in joystick control mode
-        elif msg.state == "LANE_FOLLOWING":
+        elif msg.state == "Custom mode":
             rospy.sleep(1)  # Wait for a second for the node to be ready
             self.move_square()  # Move the robot in a square pattern
 
@@ -38,14 +38,14 @@ class Drive_Square:
     # Move the robot in a square pattern
     def move_square(self):
         # Define the side length of the square (adjust as needed)
-        side_length = 1.0  # meters
+        side_length = 0.5  # meters
 
         # Move the robot forward and then turn 90 degrees four times to form a square
         for _ in range(4):
             # Move forward for the specified side length
             self.move_forward(side_length)
 
-            rospy.sleep(2)  
+            # rospy.sleep(2)  
 
             # Turn the robot 90 degrees (adjust the angular velocity for the turn)
             self.turn_robot()
