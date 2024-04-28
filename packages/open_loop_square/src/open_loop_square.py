@@ -89,15 +89,12 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
 
-        # Monitor angle turned to complete the turn (adjust based on turning performance)
-        initial_angle = self.current_angle  # Replace with actual angle measurement
-        target_angle = initial_angle + 1.57  # Target angle for 90 degrees (adjust as needed)
-
-        while not rospy.is_shutdown() and self.current_angle < target_angle:
-            rospy.sleep(0.1)  # Check angle turned every 0.1 seconds
+        # Allow the robot to turn for a fixed duration to approximate a 90-degree turn
+        rospy.sleep(3.0)  # Adjust the sleep time to achieve approximately 90 degrees
 
         # Stop the robot after completing the turn
         self.stop_robot()
+
 
     # Run the ROS node (spin forever)
     def run(self):
