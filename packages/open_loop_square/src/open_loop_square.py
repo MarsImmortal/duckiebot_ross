@@ -47,22 +47,6 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
 
-    # Move the robot in a square pattern
-    def move_square(self):
-        # Define the side length of the square (adjust as needed)
-        side_length = 0.5  # meters
-
-        # Move the robot forward and then turn 90 degrees four times to form a square
-        for _ in range(4):
-            # Move forward for the specified side length
-            self.move_forward(side_length)
-
-            # Turn the robot 90 degrees (adjust the angular velocity for the turn)
-            self.turn_robot()
-
-        # Stop the robot after completing the square
-        self.stop_robot()
-
     # Move the robot forward by a specified distance (side_length)
     def move_forward(self, distance):
         self.cmd_msg.header.stamp = rospy.Time.now()
@@ -72,11 +56,15 @@ class Drive_Square:
         rospy.loginfo(f"Moving Forward by {distance} meters...")
 
         # Monitor distance traveled to handle obstacles
-        initial_distance = self.distance_traveled
-        target_distance = initial_distance + distance
+        while not rospy.is_shutdown() and self.distance_traveled < distance:
+            # Check if an obstacle is detected
+            if self.obstacle_detected:
+                # If obstacle detected, stop moving forward
+                self.stop_robot()
+                break
 
-        while not rospy.is_shutdown() and self.distance_traveled < target_distance:
             rospy.sleep(0.1)  # Check distance traveled every 0.1 seconds
+            self.distance_traveled += 0.1  # Increment distance traveled
 
         # Stop the robot after reaching the desired distance
         self.stop_robot()
@@ -89,12 +77,24 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
 
-        # Allow the robot to turn for a fixed duration to approximate a 90-degree turn
-        rospy.sleep(3.0)  # Adjust the sleep time to achieve approximately 90 degrees
+        # Monitor angle turned to complete the turn (adjust based on turning performance)
+        rospy.sleep(3.0)  # Adjust sleep time to approximate 90-degree turn
 
         # Stop the robot after completing the turn
         self.stop_robot()
 
+    # Move the robot in a square pattern
+    def move_square(self):
+        # Define the side length of the square (adjust as needed)
+        side_length = 0.5  # meters
+
+        # Move the robot forward and then turn 90 degrees four times to form a square
+        for _ in range(4):
+            # Move forward for the specified side length
+            self.move_forward(side_length)
+
+            # Turn the robot 90 degrees (adjust the angular velocity for the turn)
+            self.turn_robot()
 
     # Run the ROS node (spin forever)
     def run(self):
