@@ -70,7 +70,7 @@ class Drive_Square:
         self.cmd_msg.omega = 1  # Adjust the angular velocity for a slower turn
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
-        rospy.sleep(1.6)
+        rospy.sleep(0.75)
         self.stop_robot()  # Adjust sleep time for a 90-degree turn based on the turning speed
 
 
