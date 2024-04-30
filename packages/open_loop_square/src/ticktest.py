@@ -30,15 +30,16 @@ class Drive_Square:
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
         rospy.loginfo("Ticks: %s", msg.data)
+        return msg.data
         
-    def publish_encoder_data(self, degrees):
+    def publish_encoder_data(self,degrees):
     # Create a WheelEncoderStamped message
         encoder_msg = WheelEncoderStamped()
-
+        target_degree = encoder_msg.data + degrees
         # Populate the message fields (e.g., header, data, resolution, type)
         encoder_msg.header.stamp = rospy.Time.now()  # Use current time as the message timestamp
         encoder_msg.header.frame_id = "oryx/right_wheel_axis"
-        encoder_msg.data += degrees
+        encoder_msg.data  = target_degree
         encoder_msg.resolution = 135
         encoder_msg.type = 1
 
@@ -46,10 +47,6 @@ class Drive_Square:
         self.publisher.publish(encoder_msg)
         rospy.loginfo("Published encoder data")
 
-        
-    def add_encoder_turn(self, msg, value):
-        rospy.loginfo("adding 90 to right encoder: %s", msg.data)
-        msg.data += value
 
     # def calibrate_ticks_per_meter(self):
     #     rospy.loginfo("Calibrating ticks per meter...")
