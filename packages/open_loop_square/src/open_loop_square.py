@@ -58,7 +58,7 @@ class Drive_Square:
                 # Avoid obstacle by turning right
                 self.cmd_msg.header.stamp = rospy.Time.now()
                 self.cmd_msg.v = 0.0
-                self.cmd_msg.omega = -0.5  # Turn right (adjust angular velocity as needed)
+                self.cmd_msg.omega = -1  # Turn right (adjust angular velocity as needed)
                 self.pub.publish(self.cmd_msg)
                 rospy.sleep(1)  # Turn for 1 second
 
@@ -78,7 +78,7 @@ class Drive_Square:
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 0.5
+        self.cmd_msg.omega = 1
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
 
@@ -92,8 +92,8 @@ class Drive_Square:
             self.move_forward(self.side_length)
             self.turn_robot()
 
-    def run(self):
-        rospy.spin()
+    # def run(self):
+    #     rospy.spin()
 
 if __name__ == '__main__':
     try:
