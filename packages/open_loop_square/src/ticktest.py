@@ -51,6 +51,10 @@ class Drive_Square:
         # Stop the robot after reaching the target distance
         self.stop_robot()
 
+        # Ensure the robot stops after reaching the target distance
+        self.cmd_msg.v = 0.0
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo("Reached target distance. Robot stopped.")
 
     def stop_robot(self):
         # Send zero velocity command to stop the robot
