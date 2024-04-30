@@ -5,10 +5,6 @@ class Drive_Square:
     def __init__(self):
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
-        self.initial_ticks = None
-        self.distance_moved = 0.0
-        self.ticks_sum = 0
-        self.ticks_per_meter = None
 
         # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
@@ -25,48 +21,28 @@ class Drive_Square:
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
-            rospy.sleep(1)  # Wait for a second for the node to be ready
-            self.calibrate_ticks_per_meter()  # Calibrate ticks per meter
-            self.move_straight(1.0)  # Move the robot forward by 1 meter
+            rospy.sleep(1)  # Wait for a second for the node to be ready # Calibrate ticks per meter
+            self.move_straight(1.0) # Move the robot forward by 1 meter
+            self.stop_robot() # Stop the robot if in joystick control mode
 
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
-        if self.initial_ticks is None:
-            self.initial_ticks = msg.data
-        # Calculate ticks per meter while moving
-        if self.initial_ticks is not None:
-            self.ticks_sum += msg.data - self.initial_ticks
-            self.distance_moved += 1.0 / self.ticks_per_meter
-            self.initial_ticks = msg.data
+        rospy.loginfo("Received encoder message")
+        rospy .info("Ticks: %s", msg.data)
 
-    def calibrate_ticks_per_meter(self):
-        rospy.loginfo("Calibrating ticks per meter...")
-        rospy.sleep(3)  # Wait for a few seconds to calibrate
-        self.ticks_per_meter = self.ticks_sum / self.distance_moved
-        rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
+    # def calibrate_ticks_per_meter(self):
+    #     rospy.loginfo("Calibrating ticks per meter...")
+    #     rospy.sleep(3)  # Wait for a few seconds to calibrate
+    #     self.ticks_per_meter = self.ticks_sum / self.distance_moved
+    #     rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
 
     def move_straight(self, distance):
-        # Convert desired distance to target ticks based on ticks_per_meter
-        if self.ticks_per_meter is not None:
-            target_ticks = int(distance * self.ticks_per_meter)
-
-            # Set forward velocity
-            self.cmd_msg.header.stamp = rospy.Time.now()
-            self.cmd_msg.v = 0.1  # Forward velocity (adjust as needed)
-            self.cmd_msg.omega = 0.0
-            self.pub.publish(self.cmd_msg)
-            rospy.loginfo(f"Moving Forward by {distance} meters...")
-
-            # Check if the robot has reached the target ticks
-            rate = rospy.Rate(10)  # 10 Hz
-            while not rospy.is_shutdown():
-                if self.ticks_sum >= target_ticks:
-                    break
-                rate.sleep()
-
-            self.stop_robot()  # Stop the robot after reaching the desired distance
-        else:
-            rospy.logerr("Ticks per Meter is not calibrated.")
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.4  # Forward velocity (adjust as needed)
+        self.cmd_msg.omega = 0.0
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo(f"Moving Forward by {distance} meters...")
+        rospy.sleep(distance / 0.4)
 
     def stop_robot(self):
         # Send zero velocities to stop the robot
