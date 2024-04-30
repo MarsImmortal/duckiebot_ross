@@ -22,12 +22,11 @@ class Drive_Square:
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready # Calibrate ticks per meter
-            self.move_straight(1.0) # Move the robot forward by 1 meter
+            self.turn_robot()# Move the robot forward by 1 meter
             self.stop_robot() # Stop the robot if in joystick control mode
 
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
-        rospy.loginfo("Received encoder message")
         rospy.loginfo("Ticks: %s", msg.data)
 
     # def calibrate_ticks_per_meter(self):
@@ -51,6 +50,15 @@ class Drive_Square:
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
+        
+    def turn_robot(self):
+        # Set the angular velocity to turn 90 degrees (adjust as needed)
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.0
+        self.cmd_msg.omega = 0.5  # Adjust the angular velocity for a slower turn
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo("Turning...")
+        rospy.sleep(1.57)
 
     def run(self):
         rospy.spin()  # Keeps the node from exiting until shutdown
