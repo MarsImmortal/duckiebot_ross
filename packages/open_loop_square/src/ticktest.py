@@ -8,7 +8,7 @@ class Drive_Square:
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
         self.initial_ticks = None
-        self.tick_distance_conversion = None
+        self.ticks_per_meter = None
 
         # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
@@ -26,7 +26,7 @@ class Drive_Square:
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
-            self.calibrate_tick_distance_conversion()  # Calibrate tick-to-distance conversion
+            self.calibrate_ticks_per_meter()  # Calibrate ticks per meter
             self.move_straight(1.0)  # Move the robot forward by 1 meter
 
     def encoder_callback(self, msg):
@@ -34,41 +34,53 @@ class Drive_Square:
         if self.initial_ticks is None:
             self.initial_ticks = msg.data
 
-    def calibrate_tick_distance_conversion(self):
-        # Calculate the tick-to-distance conversion factor for moving 1 meter
+    def calibrate_ticks_per_meter(self):
+        # Wait for the initial ticks to be set
         if self.initial_ticks is not None:
-            final_ticks = self.initial_ticks
+            # Move the robot forward for a known distance (e.g., 1 meter)
+            target_ticks = self.initial_ticks + self.ticks_per_meter  # Move forward by 1 meter
+            self.cmd_msg.header.stamp = rospy.Time.now()
+            self.cmd_msg.v = 0.5  # Forward velocity (adjust as needed)
+            self.cmd_msg.omega = 0.0
+            self.pub.publish(self.cmd_msg)
+            rospy.loginfo("Calibrating ticks per meter...")
 
-            # Wait for a moment to capture final encoder ticks after movement
-            rospy.sleep(2)  # Adjust the sleep time based on robot speed and distance
+            # Monitor encoder ticks until the robot moves 1 meter
+            rate = rospy.Rate(10)  # 10 Hz
+            while not rospy.is_shutdown():
+                current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
+                if current_ticks >= target_ticks:
+                    break
+                rate.sleep()
 
-            # Calculate the tick difference
-            tick_difference = final_ticks - self.initial_ticks
-
-            # Calculate the tick-to-distance conversion factor for moving 1 meter
-            self.tick_distance_conversion = 1.0 / tick_difference
-            rospy.loginfo(f"Tick-to-Distance Conversion Factor: {self.tick_distance_conversion} meters/tick")
+            # Calculate the number of ticks per meter
+            self.ticks_per_meter = target_ticks - self.initial_ticks
+            rospy.loginfo(f"Ticks per Meter: {self.ticks_per_meter}")
+            self.stop_robot()  # Stop the robot after calibration
 
     def move_straight(self, distance):
-        # Convert desired distance to target ticks based on tick_distance_conversion
-        target_ticks = int(distance / self.tick_distance_conversion)
+        # Convert desired distance to target ticks based on ticks_per_meter
+        if self.ticks_per_meter is not None:
+            target_ticks = int(distance * self.ticks_per_meter)
 
-        # Set forward velocity
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.5  # Forward velocity (adjust as needed)
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo(f"Moving Forward by {distance} meters...")
+            # Set forward velocity
+            self.cmd_msg.header.stamp = rospy.Time.now()
+            self.cmd_msg.v = 0.5  # Forward velocity (adjust as needed)
+            self.cmd_msg.omega = 0.0
+            self.pub.publish(self.cmd_msg)
+            rospy.loginfo(f"Moving Forward by {distance} meters...")
 
-        # Check if the robot has reached the target ticks
-        rate = rospy.Rate(10)  # 10 Hz
-        while not rospy.is_shutdown():
-            current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
-            if current_ticks >= target_ticks:
-                break
-            rate.sleep()
+            # Check if the robot has reached the target ticks
+            rate = rospy.Rate(10)  # 10 Hz
+            while not rospy.is_shutdown():
+                current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
+                if current_ticks >= target_ticks:
+                    break
+                rate.sleep()
 
-        self.stop_robot()  # Stop the robot after reaching the desired distance
+            self.stop_robot()  # Stop the robot after reaching the desired distance
+        else:
+            rospy.logerr("Ticks per Meter is not calibrated.")
 
     def stop_robot(self):
         # Send zero velocities to stop the robot
