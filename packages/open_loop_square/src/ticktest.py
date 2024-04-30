@@ -1,15 +1,13 @@
-
-
 import rospy
 from duckietown_msgs.msg import Twist2DStamped, FSMState, WheelEncoderStamped
-
-
 
 class Drive_Square:
     def __init__(self):
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
         self.initial_ticks = None
+        self.distance_moved = 0.0
+        self.ticks_sum = 0
         self.ticks_per_meter = None
 
         # Initialize ROS node
@@ -35,27 +33,17 @@ class Drive_Square:
         # Store initial ticks value upon receiving first encoder message
         if self.initial_ticks is None:
             self.initial_ticks = msg.data
+        # Calculate ticks per meter while moving
+        if self.initial_ticks is not None:
+            self.ticks_sum += msg.data - self.initial_ticks
+            self.distance_moved += 1.0 / self.ticks_per_meter
+            self.initial_ticks = msg.data
 
     def calibrate_ticks_per_meter(self):
-        if self.initial_ticks is not None:
-            # Move the robot forward by a known distance (e.g., 1 meter)
-            distance_moved = 1.0  # meters (adjust as needed)
-            target_ticks = self.initial_ticks  # Initial ticks value
-
-            # Wait for the robot to move and count the ticks
-            rospy.loginfo("Moving forward to calibrate ticks per meter...")
-            rospy.sleep(3)  # Adjust duration based on how long it takes to move the desired distance
-
-            # Read current ticks after movement
-            final_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
-
-            # Calculate ticks per meter
-            delta_ticks = final_ticks - target_ticks
-            self.ticks_per_meter = delta_ticks / distance_moved
-
-            rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
-        else:
-            rospy.logerr("Initial ticks value is not yet received.")
+        rospy.loginfo("Calibrating ticks per meter...")
+        rospy.sleep(3)  # Wait for a few seconds to calibrate
+        self.ticks_per_meter = self.ticks_sum / self.distance_moved
+        rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
 
     def move_straight(self, distance):
         # Convert desired distance to target ticks based on ticks_per_meter
@@ -72,8 +60,7 @@ class Drive_Square:
             # Check if the robot has reached the target ticks
             rate = rospy.Rate(10)  # 10 Hz
             while not rospy.is_shutdown():
-                current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
-                if current_ticks >= target_ticks:
+                if self.ticks_sum >= target_ticks:
                     break
                 rate.sleep()
 
