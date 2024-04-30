@@ -28,7 +28,7 @@ class Drive_Square:
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
         rospy.loginfo("Received encoder message")
-        rospy .info("Ticks: %s", msg.data)
+        rospy.loginfo("Ticks: %s", msg.data)
 
     # def calibrate_ticks_per_meter(self):
     #     rospy.loginfo("Calibrating ticks per meter...")
