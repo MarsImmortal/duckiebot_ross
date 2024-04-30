@@ -34,6 +34,8 @@ class Drive_Square:
         # Calculate target ticks for the target distance
         target_ticks = self.encoder_ticks_start + self.distance_to_ticks(self.target_distance)
 
+        rospy.loginfo(f"Starting move - Initial ticks: {self.encoder_ticks_start}, Target ticks: {target_ticks}")
+
         # Send velocity command to move forward
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.6  # Adjust linear velocity as needed
@@ -44,9 +46,11 @@ class Drive_Square:
         # Monitor encoder ticks until reaching the target ticks (target distance)
         while not rospy.is_shutdown() and self.encoder_ticks_end < target_ticks:
             rospy.sleep(0.1)
+            rospy.loginfo(f"Current ticks: {self.encoder_ticks_end}")
 
         # Stop the robot after reaching the target distance
         self.stop_robot()
+
 
     def stop_robot(self):
         # Send zero velocity command to stop the robot
