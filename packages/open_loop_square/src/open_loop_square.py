@@ -63,17 +63,22 @@ class Drive_Square:
                 self.stop_robot()
                 break
 
-            # Adjust left wheel speed to match the right wheel speed
+            # Calculate the difference in left encoder ticks
             current_left_ticks = self.left_encoder_ticks
-            left_ticks_to_move = (current_left_ticks - initial_left_ticks) * (target_ticks - self.right_encoder_ticks) / (current_left_ticks - initial_left_ticks)
-            self.cmd_msg.header.stamp = rospy.Time.now()
-            self.cmd_msg.v = 0.6
-            self.cmd_msg.omega = 0.0
-            self.pub.publish(self.cmd_msg)
+            left_ticks_diff = current_left_ticks - initial_left_ticks
+
+            # Adjust left wheel speed to match the right wheel speed
+            if left_ticks_diff != 0:
+                left_ticks_to_move = left_ticks_diff * (target_ticks - self.right_encoder_ticks) / left_ticks_diff
+                self.cmd_msg.header.stamp = rospy.Time.now()
+                self.cmd_msg.v = 0.6
+                self.cmd_msg.omega = 0.0
+                self.pub.publish(self.cmd_msg)
 
             rospy.sleep(0.1)
 
         self.stop_robot()
+
 
     def turn_robot(self):
         target_ticks = self.right_encoder_ticks + 90  # Rotate 90 degrees
