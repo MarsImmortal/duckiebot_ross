@@ -7,6 +7,7 @@ class Drive_Square:
         self.cmd_msg = Twist2DStamped()
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
         self.ticks_per_90_degrees = 90  # Ticks per 90-degree turn (experimental value)
+        self.current_ticks = 0
 
         # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
@@ -28,11 +29,11 @@ class Drive_Square:
             self.rotate_in_place(90)  # Rotate the robot 90 degrees
 
     def encoder_callback(self, msg):
-        # This function is not used for calibration in this case
-        return msg.data
+        # Update the current_ticks with the latest encoder value
+        self.current_ticks = msg.data
 
     def move_straight(self, distance):
-        target_ticks = self.encoder_callback() + int(distance * self.ticks_per_meter)
+        target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.4  # Forward velocity (adjust as needed)
@@ -41,16 +42,13 @@ class Drive_Square:
         rospy.loginfo(f"Moving Forward by {distance} meters...")
 
         rate = rospy.Rate(10)  # 10 Hz
-        while not rospy.is_shutdown():
-            current_ticks = self.encoder_callback()  # Get current ticks
-            if current_ticks >= target_ticks:
-                break
+        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             rate.sleep()
 
         self.stop_robot()
 
     def rotate_in_place(self, degrees):
-        target_ticks = self.encoder_callback() + int(degrees / 90 * self.ticks_per_90_degrees)
+        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
@@ -59,10 +57,7 @@ class Drive_Square:
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
         rate = rospy.Rate(10)  # 10 Hz
-        while not rospy.is_shutdown():
-            current_ticks = self.encoder_callback()
-            if current_ticks >= target_ticks:
-                break
+        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             rate.sleep()
 
         self.stop_robot()
