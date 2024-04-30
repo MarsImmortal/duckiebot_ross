@@ -92,8 +92,8 @@ class Drive_Square:
             self.move_forward(self.side_length)
             self.turn_robot()
 
-    # def run(self):
-    #     rospy.spin()
+    def run(self):
+        rospy.spin()
 
 if __name__ == '__main__':
     try:
