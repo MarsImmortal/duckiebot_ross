@@ -17,6 +17,9 @@ class Drive_Square:
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
         rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
+    def encoder_callback(self, msg):
+        # Update encoder ticks
+        self.encoder_ticks_end = msg.data
 
     # Callback function to handle FSM state changes
     def fsm_callback(self, msg):
@@ -37,9 +40,6 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
 
-    def encoder_callback(self, msg):
-        # Update encoder ticks
-        self.encoder_ticks_end = msg.data
 
     # Move the robot in a square pattern
     def move_square(self):
@@ -87,7 +87,7 @@ class Drive_Square:
     def run(self):
         rospy.spin()  # Keeps the node from exiting until shutdown
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     try:
         # Create an instance of Drive_Square class
         duckiebot_movement = Drive_Square()
