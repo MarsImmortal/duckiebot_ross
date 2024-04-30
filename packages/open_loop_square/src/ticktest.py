@@ -70,7 +70,7 @@ class Drive_Square:
 
     def make_square(self):
         # Define side length of the square
-        side_length = 1.0  # meters
+        side_length = 0.5  # meters
 
         # Move forward and rotate 4 times to form a square
         for _ in range(4):
