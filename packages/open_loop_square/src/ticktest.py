@@ -6,7 +6,7 @@ class Drive_Square:
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
-        self.ticks_per_90_degrees = 110  # Ticks per 90-degree turn (experimental value)
+        self.ticks_per_90_degrees = 100  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
 
         # Initialize ROS node
@@ -25,8 +25,7 @@ class Drive_Square:
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
-            self.move_straight(1.0)  # Move the robot forward by 1 meter
-            self.rotate_in_place(90)  # Rotate the robot 90 degrees
+            self.make_square()  # Execute square pattern
 
     def encoder_callback(self, msg):
         # Update the current_ticks with the latest encoder value
@@ -68,6 +67,15 @@ class Drive_Square:
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
+
+    def make_square(self):
+        # Define side length of the square
+        side_length = 1.0  # meters
+
+        # Move forward and rotate 4 times to form a square
+        for _ in range(4):
+            self.move_straight(side_length)
+            self.rotate_in_place(90)
 
     def run(self):
         rospy.spin()
