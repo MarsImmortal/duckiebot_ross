@@ -14,7 +14,7 @@ class Drive_Square:
         self.publisher = rospy.Publisher('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, queue_size=10)
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
-        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
+        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback,self.publish_encoder_data, queue_size=1)
 
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
@@ -31,10 +31,10 @@ class Drive_Square:
         # Store initial ticks value upon receiving first encoder message
         rospy.loginfo("Ticks: %s", msg.data)
         
-    def publish_encoder_data(self,degrees, msg):
+    def publish_encoder_data(self, degree, msg):
     # Create a WheelEncoderStamped message
         encoder_msg = WheelEncoderStamped()
-        target_degree = msg.data + degrees
+        target_degree = msg.data + degree
         # Populate the message fields (e.g., header, data, resolution, type)
         encoder_msg.header.stamp = rospy.Time.now()  # Use current time as the message timestamp
         encoder_msg.header.frame_id = "oryx/right_wheel_axis"
