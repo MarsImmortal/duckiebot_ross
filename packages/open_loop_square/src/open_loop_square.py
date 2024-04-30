@@ -12,6 +12,7 @@ class Drive_Square:
         self.obstacle_detected = False
         self.encoder_ticks = 0
         self.ticks_per_meter = 534  # Ticks per meter for your robot
+        self.side_length = 0.5  # Adjust side length as needed for your square
 
         rospy.init_node('drive_square_node', anonymous=True)
 
@@ -28,7 +29,7 @@ class Drive_Square:
 
     def range_callback(self, msg):
         # Check for obstacles within a defined range (e.g., 0.2 meters)
-        if msg.range < 0.2:
+        if msg.range < 0.05:
             self.obstacle_detected = True
         else:
             self.obstacle_detected = False
@@ -54,8 +55,20 @@ class Drive_Square:
 
         while not rospy.is_shutdown() and self.encoder_ticks < target_ticks:
             if self.obstacle_detected:
-                self.stop_robot()
-                break
+                # Avoid obstacle by turning right
+                self.cmd_msg.header.stamp = rospy.Time.now()
+                self.cmd_msg.v = 0.0
+                self.cmd_msg.omega = -0.5  # Turn right (adjust angular velocity as needed)
+                self.pub.publish(self.cmd_msg)
+                rospy.sleep(1)  # Turn for 1 second
+
+                # Resume forward movement
+                self.cmd_msg.header.stamp = rospy.Time.now()
+                self.cmd_msg.v = 0.1
+                self.cmd_msg.omega = 0.0
+                self.pub.publish(self.cmd_msg)
+                rospy.loginfo("Resuming forward movement after avoiding obstacle...")
+
             rospy.sleep(0.1)
 
         self.stop_robot()
@@ -75,10 +88,8 @@ class Drive_Square:
         self.stop_robot()
 
     def move_square(self):
-        side_length = 0.5  # Adjust side length as needed for your square
-
         for _ in range(4):
-            self.move_forward(side_length)
+            self.move_forward(self.side_length)
             self.turn_robot()
 
     def run(self):
