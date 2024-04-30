@@ -7,6 +7,7 @@ class Drive_Square:
     def __init__(self):
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
+        self.first_tick = None
         self.initial_ticks = None
         self.ticks_per_meter = None
 
@@ -23,16 +24,20 @@ class Drive_Square:
 
         # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
-            self.encoder_callback()  # Stop the robot if in joystick control mode
+            self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
             self.calibrate_ticks_per_meter()  # Calibrate ticks per meter
             self.move_straight(1.0)  # Move the robot forward by 1 meter
 
+    def initial_tick(self, msg):
+        self.first_tick = msg.data
+        rospy.loginfo(f"Initial Ticks: {self.first_tick}")
+        
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
-        self.ticks = msg.data
-        rospy.loginfo(f"Initial Ticks: {self.ticks}")
+        self.initial_ticks = msg.data
+        rospy.loginfo(f"Initial Ticks: {self.initial_ticks}")
 
     def calibrate_ticks_per_meter(self):
         self.cmd_msg.header.stamp = rospy.Time.now()
@@ -41,6 +46,7 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {1} meters...")
         rospy.sleep(1 / 0.1)
+        rospy.loginfo(f"Initial Ticks: {self.first_tick}")
         
         # Wait for the initial ticks to be set
         
