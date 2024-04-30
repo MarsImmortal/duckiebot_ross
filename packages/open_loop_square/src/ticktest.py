@@ -30,12 +30,11 @@ class Drive_Square:
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
         rospy.loginfo("Ticks: %s", msg.data)
-        return msg.data
         
-    def publish_encoder_data(self,degrees):
+    def publish_encoder_data(self,degrees, msg):
     # Create a WheelEncoderStamped message
         encoder_msg = WheelEncoderStamped()
-        target_degree = encoder_msg.data + degrees
+        target_degree = msg.data + degrees
         # Populate the message fields (e.g., header, data, resolution, type)
         encoder_msg.header.stamp = rospy.Time.now()  # Use current time as the message timestamp
         encoder_msg.header.frame_id = "oryx/right_wheel_axis"
@@ -46,21 +45,6 @@ class Drive_Square:
         # Publish the message
         self.publisher.publish(encoder_msg)
         rospy.loginfo("Published encoder data")
-
-
-    # def calibrate_ticks_per_meter(self):
-    #     rospy.loginfo("Calibrating ticks per meter...")
-    #     rospy.sleep(3)  # Wait for a few seconds to calibrate
-    #     self.ticks_per_meter = self.ticks_sum / self.distance_moved
-    #     rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
-
-    def move_straight(self, distance):
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.4  # Forward velocity (adjust as needed)
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo(f"Moving Forward by {distance} meters...")
-        rospy.sleep(distance / 0.4)
 
     def stop_robot(self):
         # Send zero velocities to stop the robot
