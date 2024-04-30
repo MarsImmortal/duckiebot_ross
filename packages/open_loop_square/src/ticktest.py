@@ -1,13 +1,14 @@
-#!/usr/bin/env python3
 
 import rospy
-from duckietown_msgs.msg import Twist2DStamped, FSMState, WheelEncoderStamped
+from duckietown_msgs.msg import Twist2DStamped
+from duckietown_msgs.msg import FSMState
+
+
 
 class Drive_Square:
     def __init__(self):
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
-        self.first_tick = None
         self.initial_ticks = None
         self.ticks_per_meter = None
 
@@ -17,7 +18,7 @@ class Drive_Square:
         # Initialize Pub/Subs
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
-        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
+        rospy.Subscriber('/your_robot_name/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
 
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
@@ -30,26 +31,31 @@ class Drive_Square:
             self.calibrate_ticks_per_meter()  # Calibrate ticks per meter
             self.move_straight(1.0)  # Move the robot forward by 1 meter
 
-    def initial_tick(self, msg):
-        self.first_tick = msg.data
-        rospy.loginfo(f"first Ticks: {self.first_tick}")
-        
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
-        self.initial_ticks = msg.data
-        rospy.loginfo(f"Initial Ticks: {self.initial_ticks}")
+        if self.initial_ticks is None:
+            self.initial_ticks = msg.data
 
     def calibrate_ticks_per_meter(self):
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.1  # Forward velocity (adjust as needed)
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo(f"Moving Forward by {1} meters...")
-        rospy.sleep(1 / 0.1)
-        rospy.loginfo(f"Initial Ticks: {self.first_tick}")
-        
-        # Wait for the initial ticks to be set
-        
+        if self.initial_ticks is not None:
+            # Move the robot forward by a known distance (e.g., 1 meter)
+            distance_moved = 1.0  # meters (adjust as needed)
+            target_ticks = self.initial_ticks  # Initial ticks value
+
+            # Wait for the robot to move and count the ticks
+            rospy.loginfo("Moving forward to calibrate ticks per meter...")
+            rospy.sleep(3)  # Adjust duration based on how long it takes to move the desired distance
+
+            # Read current ticks after movement
+            final_ticks = rospy.get_param('/your_robot_name/right_wheel_encoder_node/tick')  # Get current ticks
+
+            # Calculate ticks per meter
+            delta_ticks = final_ticks - target_ticks
+            self.ticks_per_meter = delta_ticks / distance_moved
+
+            rospy.loginfo(f"Ticks per meter calibrated: {self.ticks_per_meter}")
+        else:
+            rospy.logerr("Initial ticks value is not yet received.")
 
     def move_straight(self, distance):
         # Convert desired distance to target ticks based on ticks_per_meter
@@ -58,7 +64,7 @@ class Drive_Square:
 
             # Set forward velocity
             self.cmd_msg.header.stamp = rospy.Time.now()
-            self.cmd_msg.v = 0.5  # Forward velocity (adjust as needed)
+            self.cmd_msg.v = 0.1  # Forward velocity (adjust as needed)
             self.cmd_msg.omega = 0.0
             self.pub.publish(self.cmd_msg)
             rospy.loginfo(f"Moving Forward by {distance} meters...")
@@ -66,7 +72,7 @@ class Drive_Square:
             # Check if the robot has reached the target ticks
             rate = rospy.Rate(10)  # 10 Hz
             while not rospy.is_shutdown():
-                current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
+                current_ticks = rospy.get_param('/your_robot_name/right_wheel_encoder_node/tick')  # Get current ticks
                 if current_ticks >= target_ticks:
                     break
                 rate.sleep()
