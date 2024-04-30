@@ -29,10 +29,10 @@ class Drive_Square:
 
     def encoder_callback(self, msg):
         # This function is not used for calibration in this case
-        pass
+        return msg.data
 
     def move_straight(self, distance):
-        target_ticks = int(distance * self.ticks_per_meter)
+        target_ticks = self.encoder_callback() + int(distance * self.ticks_per_meter)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.4  # Forward velocity (adjust as needed)
@@ -42,7 +42,7 @@ class Drive_Square:
 
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown():
-            current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
+            current_ticks = self.encoder_callback()  # Get current ticks
             if current_ticks >= target_ticks:
                 break
             rate.sleep()
@@ -50,7 +50,7 @@ class Drive_Square:
         self.stop_robot()
 
     def rotate_in_place(self, degrees):
-        target_ticks = int(degrees / 90 * self.ticks_per_90_degrees)
+        target_ticks = self.encoder_callback() + int(degrees / 90 * self.ticks_per_90_degrees)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
@@ -60,7 +60,7 @@ class Drive_Square:
 
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown():
-            current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
+            current_ticks = self.encoder_callback()
             if current_ticks >= target_ticks:
                 break
             rate.sleep()
