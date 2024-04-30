@@ -18,7 +18,7 @@ class Drive_Square:
         # Initialize Pub/Subs
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
-        rospy.Subscriber('/your_robot_name/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
+        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
 
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
@@ -47,7 +47,7 @@ class Drive_Square:
             rospy.sleep(3)  # Adjust duration based on how long it takes to move the desired distance
 
             # Read current ticks after movement
-            final_ticks = rospy.get_param('/your_robot_name/right_wheel_encoder_node/tick')  # Get current ticks
+            final_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
 
             # Calculate ticks per meter
             delta_ticks = final_ticks - target_ticks
@@ -72,7 +72,7 @@ class Drive_Square:
             # Check if the robot has reached the target ticks
             rate = rospy.Rate(10)  # 10 Hz
             while not rospy.is_shutdown():
-                current_ticks = rospy.get_param('/your_robot_name/right_wheel_encoder_node/tick')  # Get current ticks
+                current_ticks = rospy.get_param('/oryx/right_wheel_encoder_node/tick')  # Get current ticks
                 if current_ticks >= target_ticks:
                     break
                 rate.sleep()
