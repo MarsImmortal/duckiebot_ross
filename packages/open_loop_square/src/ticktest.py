@@ -8,7 +8,6 @@ class Drive_Square:
 
         # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
-        rospy.init_node('encoder_publisher')
 
 
         # Initialize Pub/Subs
