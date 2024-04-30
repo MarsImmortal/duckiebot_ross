@@ -1,7 +1,7 @@
 
+
 import rospy
-from duckietown_msgs.msg import Twist2DStamped
-from duckietown_msgs.msg import FSMState
+from duckietown_msgs.msg import Twist2DStamped, FSMState, WheelEncoderStamped
 
 
 
