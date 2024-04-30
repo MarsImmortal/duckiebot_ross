@@ -32,7 +32,7 @@ class Drive_Square:
 
     def initial_tick(self, msg):
         self.first_tick = msg.data
-        rospy.loginfo(f"Initial Ticks: {self.first_tick}")
+        rospy.loginfo(f"first Ticks: {self.first_tick}")
         
     def encoder_callback(self, msg):
         # Store initial ticks value upon receiving first encoder message
