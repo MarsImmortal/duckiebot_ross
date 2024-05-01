@@ -46,7 +46,7 @@ class Drive_Square:
         target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
+        self.cmd_msg.v = 0.3  # Forward velocity (adjust as needed)
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
