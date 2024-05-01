@@ -42,9 +42,11 @@ class Drive_Square:
 
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
-            rospy.loginfo("Obstacle Detected!")
-        else:
+            # rospy.loginfo("Obstacle Detected!")
+        elif msg.range > obstacle_threshold:
             self.obstacle_detected = False
+        else:
+            pass
 
     def move_straight(self, distance):
         target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
