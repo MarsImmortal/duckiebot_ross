@@ -106,7 +106,7 @@ if __name__ == '__main__':
     try:
         duckiebot_movement = Drive_Square()
         rospy.loginfo("Drive Square Node Initialized...")
-        duckiebot_movement.run()
+        # duckiebot_movement.run()
     except rospy.ROSInterruptException:
         rospy.loginfo("Drive Square Node Interrupted...")
         pass
