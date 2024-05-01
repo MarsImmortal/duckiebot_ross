@@ -7,7 +7,6 @@ class Drive_Square:
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
-        self.ticks_per_90_degrees = 90  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
         self.obstacle_detected = False  # Flag for obstacle detection
 
@@ -29,16 +28,17 @@ class Drive_Square:
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
             rospy.loginfo("Executing Lane Following Mode...")
-            self.make_square()  # Execute square pattern
+            self.move_square()  # Execute square pattern
 
     def encoder_callback(self, msg):
         self.current_ticks = msg.data
 
     def range_callback(self, msg):
-        obstacle_threshold = 0.2  # Adjust threshold as needed (in meters)
+        obstacle_threshold = 0.3  # Adjust threshold as needed (in meters)
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
-            rospy.loginfo("Obstacle Detected!")
+            rospy.loginfo("Obstacle Detected: Stopping...")
+            self.stop_robot()
         else:
             self.obstacle_detected = False
 
@@ -46,7 +46,7 @@ class Drive_Square:
         target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
+        self.cmd_msg.v = 0.3  # Forward velocity (adjust as needed)
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
@@ -60,14 +60,19 @@ class Drive_Square:
                 while self.obstacle_detected:
                     self.rotate_in_place(90)
                 # Resume movement after obstacle is cleared
-                self.move_straight(distance)  # Resume the interrupted movement
+                self.move_square()  # Resume the interrupted movement
                 break
             rate.sleep()
 
         self.stop_robot()
 
+    def move_square(self):
+        for _ in range(4):  # Perform the square pattern four times
+            self.move_straight(1.0)  # Move forward 1 meter
+            self.rotate_in_place(90)  # Rotate 90 degrees
+
     def rotate_in_place(self, degrees):
-        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
+        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_meter)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
@@ -75,7 +80,7 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
-        rate = rospy.Rate(10)  # 10 Hz
+        rate = rospy.Rate(5)  # 5 Hz
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             rate.sleep()
 
@@ -87,15 +92,6 @@ class Drive_Square:
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
-
-    def make_square(self):
-        side_length = 1  # meters
-
-        for _ in range(4):
-            rospy.loginfo("Moving Straight to Form Square...")
-            self.move_straight(side_length)
-            rospy.loginfo("Rotating to Form Square...")
-            self.rotate_in_place(90)
 
     def run(self):
         rospy.spin()
