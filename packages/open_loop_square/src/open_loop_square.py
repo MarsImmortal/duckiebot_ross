@@ -36,7 +36,7 @@ class Drive_Square:
 
     def range_callback(self, msg):
         # Check for obstacles within a defined range threshold
-        obstacle_threshold = 0.5  # Adjust threshold as needed (in meters)
+        obstacle_threshold = 0.2  # Adjust threshold as needed (in meters)
 
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
@@ -56,6 +56,7 @@ class Drive_Square:
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             if self.obstacle_detected:
                 self.stop_robot()  # Stop the robot if obstacle detected
+                self.rotate_in_place(90)  # Rotate 90 degrees to avoid obstacle
                 break
             rate.sleep()
 
@@ -72,9 +73,6 @@ class Drive_Square:
 
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
-            if self.obstacle_detected:
-                self.stop_robot()  # Stop the robot if obstacle detected
-                break
             rate.sleep()
 
         self.stop_robot()
