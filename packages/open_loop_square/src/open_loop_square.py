@@ -51,13 +51,13 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
 
-        rate = rospy.Rate(10)  # 10 Hz
+        rate = rospy.Rate(5)  # 10 Hz
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             while self.obstacle_detected:
                 rospy.loginfo("rotating")
                 self.rotate_in_place(90)
                 if self.obstacle_detected == False:
-                    self.move_square()
+                    self.move_straight(distance)
 
         self.stop_robot()
 
