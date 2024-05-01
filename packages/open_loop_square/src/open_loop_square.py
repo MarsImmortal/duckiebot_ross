@@ -25,9 +25,11 @@ class Drive_Square:
 
         # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
+            rospy.loginfo("Switching to Normal Joystick Control Mode...")
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
+            rospy.loginfo("Executing Lane Following Mode...")
             self.make_square()  # Execute square pattern
 
     def encoder_callback(self, msg):
@@ -40,6 +42,7 @@ class Drive_Square:
 
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
+            rospy.loginfo("Obstacle Detected!")
         else:
             self.obstacle_detected = False
 
@@ -56,6 +59,7 @@ class Drive_Square:
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             if self.obstacle_detected:
                 self.stop_robot()  # Stop the robot if obstacle detected
+                rospy.loginfo("Obstacle Detected during Movement! Stopping...")
                 self.rotate_in_place(90)  # Rotate 90 degrees to avoid obstacle
                 break
             rate.sleep()
@@ -90,7 +94,9 @@ class Drive_Square:
 
         # Move forward and rotate 4 times to form a square
         for _ in range(4):
+            rospy.loginfo("Moving Straight to Form Square...")
             self.move_straight(side_length)
+            rospy.loginfo("Rotating to Form Square...")
             self.rotate_in_place(90)
 
     def run(self):
@@ -99,6 +105,6 @@ class Drive_Square:
 if __name__ == '__main__':
     try:
         duckiebot_movement = Drive_Square()
+        rospy.loginfo("Drive Square Node Initialized...")
         duckiebot_movement.run()
-    except rospy.ROSInterruptException:
-        pass
+    except rospy.ROSInterruptException
