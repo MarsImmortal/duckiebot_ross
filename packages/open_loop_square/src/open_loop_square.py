@@ -1,44 +1,83 @@
 import rospy
-from duckietown_msgs.msg import Twist2DStamped
-from duckietown_msgs.msg import FSMState
+from duckietown_msgs.msg import Twist2DStamped, FSMState, WheelEncoderStamped
 from sensor_msgs.msg import Range
-from duckietown_msgs.msg import WheelEncoderStamped
 
 class Drive_Square:
     def __init__(self):
+        # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
-        self.obstacle_detected = False
-        self.right_encoder_ticks = 0
-        self.left_encoder_ticks = 0
-        self.ticks_per_meter = 534  # Ticks per meter for your robot
-        self.side_length = 0.5  # Adjust side length as needed for your square
+        self.ticks_per_meter = 561  # Ticks per meter (experimental value)
+        self.ticks_per_90_degrees = 90  # Ticks per 90-degree turn (experimental value)
+        self.current_ticks = 0
+        self.obstacle_detected = False  # Flag for obstacle detection
 
+        # Initialize ROS node
         rospy.init_node('drive_square_node', anonymous=True)
 
+        # Initialize Pub/Subs
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/fsm_node/mode', FSMState, self.fsm_callback, queue_size=1)
+        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
         rospy.Subscriber('/oryx/front_center_tof_driver_node/range', Range, self.range_callback, queue_size=1)
-        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.right_encoder_callback, queue_size=1)
-        rospy.Subscriber('/oryx/left_wheel_encoder_node/tick', WheelEncoderStamped, self.left_encoder_callback, queue_size=1)
 
     def fsm_callback(self, msg):
+        rospy.loginfo("State: %s", msg.state)
+
+        # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
-            self.stop_robot()
+            self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
-            self.move_square()
+            rospy.sleep(1)  # Wait for a second for the node to be ready
+            self.make_square()  # Execute square pattern
+
+    def encoder_callback(self, msg):
+        # Update the current_ticks with the latest encoder value
+        self.current_ticks = msg.data
 
     def range_callback(self, msg):
-        # Check for obstacles within a defined range (e.g., 0.05 meters)
-        if msg.range < 0.05:
+        # Check for obstacles within a defined range threshold
+        obstacle_threshold = 0.5  # Adjust threshold as needed (in meters)
+
+        if msg.range < obstacle_threshold:
             self.obstacle_detected = True
         else:
             self.obstacle_detected = False
 
-    def right_encoder_callback(self, msg):
-        self.right_encoder_ticks = msg.data
+    def move_straight(self, distance):
+        target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
 
-    def left_encoder_callback(self, msg):
-        self.left_encoder_ticks = msg.data
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
+        self.cmd_msg.omega = 0.0
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo(f"Moving Forward by {distance} meters...")
+
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
+            if self.obstacle_detected:
+                self.stop_robot()  # Stop the robot if obstacle detected
+                break
+            rate.sleep()
+
+        self.stop_robot()
+
+    def rotate_in_place(self, degrees):
+        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
+
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.0
+        self.cmd_msg.omega = 6  # Angular velocity for a 90-degree turn (adjust as needed)
+        self.pub.publish(self.cmd_msg)
+        rospy.loginfo(f"Rotating in place by {degrees} degrees...")
+
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
+            if self.obstacle_detected:
+                self.stop_robot()  # Stop the robot if obstacle detected
+                break
+            rate.sleep()
+
+        self.stop_robot()
 
     def stop_robot(self):
         self.cmd_msg.header.stamp = rospy.Time.now()
@@ -47,57 +86,14 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Robot Stopped")
 
-    def move_forward(self, distance):
-        target_ticks = self.right_encoder_ticks + distance * self.ticks_per_meter
-        initial_left_ticks = self.left_encoder_ticks
+    def make_square(self):
+        # Define side length of the square
+        side_length = 0.5  # meters
 
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.6
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo(f"Moving Forward by {distance} meters...")
-
-        while not rospy.is_shutdown() and self.right_encoder_ticks < target_ticks:
-            if self.obstacle_detected:
-                # Avoid obstacle by turning right
-                self.stop_robot()
-                break
-
-            # Calculate the difference in left encoder ticks
-            current_left_ticks = self.left_encoder_ticks
-            left_ticks_diff = current_left_ticks - initial_left_ticks
-
-            # Adjust left wheel speed to match the right wheel speed
-            if left_ticks_diff != 0:
-                left_ticks_to_move = left_ticks_diff * (target_ticks - self.right_encoder_ticks) / left_ticks_diff
-                self.cmd_msg.header.stamp = rospy.Time.now()
-                self.cmd_msg.v = 0.6
-                self.cmd_msg.omega = 0.0
-                self.pub.publish(self.cmd_msg)
-
-            rospy.sleep(0.1)
-
-        self.stop_robot()
-
-
-    def turn_robot(self):
-        target_ticks = self.right_encoder_ticks + 90  # Rotate 90 degrees
-
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 1
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo("Turning...")
-
-        while not rospy.is_shutdown() and self.right_encoder_ticks < target_ticks:
-            rospy.sleep(0.1)
-
-        self.stop_robot()
-
-    def move_square(self):
+        # Move forward and rotate 4 times to form a square
         for _ in range(4):
-            self.move_forward(self.side_length)
-            self.turn_robot()
+            self.move_straight(side_length)
+            self.rotate_in_place(90)
 
     def run(self):
         rospy.spin()
