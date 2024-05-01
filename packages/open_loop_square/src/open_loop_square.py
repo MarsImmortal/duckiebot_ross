@@ -46,25 +46,27 @@ class Drive_Square:
         else:
             self.obstacle_detected = False
 
-    def move_straight(self, distance):
-        target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
+        def move_straight(self, distance):
+            target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
 
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
-        self.cmd_msg.omega = 0.0
-        self.pub.publish(self.cmd_msg)
-        rospy.loginfo(f"Moving Forward by {distance} meters...")
+            self.cmd_msg.header.stamp = rospy.Time.now()
+            self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
+            self.cmd_msg.omega = 0.0
+            self.pub.publish(self.cmd_msg)
+            rospy.loginfo(f"Moving Forward by {distance} meters...")
 
-        rate = rospy.Rate(10)  # 10 Hz
-        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
-            if self.obstacle_detected:
-                self.stop_robot()  # Stop the robot if obstacle detected
-                rospy.loginfo("Obstacle Detected during Movement! Stopping...")
-                self.rotate_in_place(90)  # Rotate 90 degrees to avoid obstacle
-                break
-            rate.sleep()
+            rate = rospy.Rate(10)  # 10 Hz
+            while not rospy.is_shutdown() and self.current_ticks < target_ticks:
+                if self.obstacle_detected:
+                    rospy.loginfo("Obstacle Detected during Movement! Stopping...")
+                    self.stop_robot()  # Stop the robot if obstacle detected
+                    self.rotate_in_place(90)  # Rotate 90 degrees to avoid obstacle
+                    self.move_straight(distance)  # Continue moving straight after obstacle avoidance
+                    break
+                rate.sleep()
 
         self.stop_robot()
+
 
     def rotate_in_place(self, degrees):
         target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
@@ -106,7 +108,7 @@ if __name__ == '__main__':
     try:
         duckiebot_movement = Drive_Square()
         rospy.loginfo("Drive Square Node Initialized...")
-        # duckiebot_movement.run()
+        duckiebot_movement.run()
     except rospy.ROSInterruptException:
         rospy.loginfo("Drive Square Node Interrupted...")
         pass
