@@ -38,7 +38,7 @@ class Drive_Square:
         obstacle_threshold = 0.2  # Adjust threshold as needed (in meters)
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
-            rospy.loginfo("Obstacle Detected!")
+            rospy.loginfo(msg.range)
         else:
             self.obstacle_detected = False
 
@@ -75,7 +75,7 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
-        rate = rospy.Rate(10)  # 10 Hz
+        rate = rospy.Rate(5)  # 10 Hz
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             rate.sleep()
 
