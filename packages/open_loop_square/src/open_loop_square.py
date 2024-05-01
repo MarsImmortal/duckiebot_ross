@@ -23,7 +23,6 @@ class Drive_Square:
     def fsm_callback(self, msg):
         rospy.loginfo("State: %s", msg.state)
 
-        # Check the FSM state and perform actions accordingly
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
             rospy.loginfo("Switching to Normal Joystick Control Mode...")
             self.stop_robot()  # Stop the robot if in joystick control mode
@@ -33,20 +32,15 @@ class Drive_Square:
             self.make_square()  # Execute square pattern
 
     def encoder_callback(self, msg):
-        # Update the current_ticks with the latest encoder value
         self.current_ticks = msg.data
 
     def range_callback(self, msg):
-        # Check for obstacles within a defined range threshold
         obstacle_threshold = 0.2  # Adjust threshold as needed (in meters)
-
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
-            # rospy.loginfo("Obstacle Detected!")
-        elif msg.range > obstacle_threshold:
-            self.obstacle_detected = False
+            rospy.loginfo("Obstacle Detected!")
         else:
-            pass
+            self.obstacle_detected = False
 
     def move_straight(self, distance):
         target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
@@ -62,14 +56,15 @@ class Drive_Square:
             if self.obstacle_detected:
                 rospy.loginfo("Obstacle Detected during Movement! Stopping...")
                 self.stop_robot()  # Stop the robot if obstacle detected
-                while (self.obstacle_detected):
+                # Rotate until obstacle is cleared
+                while self.obstacle_detected:
                     self.rotate_in_place(90)
-                self.make_square() # Make square
+                # Resume movement after obstacle is cleared
+                self.move_straight(distance)  # Resume the interrupted movement
                 break
             rate.sleep()
 
         self.stop_robot()
-
 
     def rotate_in_place(self, degrees):
         target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
@@ -94,10 +89,8 @@ class Drive_Square:
         rospy.loginfo("Robot Stopped")
 
     def make_square(self):
-        # Define side length of the square
         side_length = 1  # meters
 
-        # Move forward and rotate 4 times to form a square
         for _ in range(4):
             rospy.loginfo("Moving Straight to Form Square...")
             self.move_straight(side_length)
