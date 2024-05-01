@@ -60,8 +60,9 @@ class Drive_Square:
             if self.obstacle_detected:
                 rospy.loginfo("Obstacle Detected during Movement! Stopping...")
                 self.stop_robot()  # Stop the robot if obstacle detected
-                self.rotate_in_place(90)  # Rotate 90 degrees to avoid obstacle
-                self.move_straight(distance)  # Continue moving straight after obstacle avoidance
+                while (self.obstacle_detected):
+                    self.rotate_in_place(90)
+                self.make_square() # Make square
                 break
             rate.sleep()
 
@@ -92,7 +93,7 @@ class Drive_Square:
 
     def make_square(self):
         # Define side length of the square
-        side_length = 0.5  # meters
+        side_length = 1  # meters
 
         # Move forward and rotate 4 times to form a square
         for _ in range(4):
