@@ -53,16 +53,11 @@ class Drive_Square:
 
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown() and self.current_ticks < target_ticks:
-            if self.obstacle_detected:
-                rospy.loginfo("Obstacle Detected during Movement! Stopping...")
-                self.stop_robot()  # Stop the robot if obstacle detected
-                # Rotate until obstacle is cleared
-                while self.obstacle_detected:
-                    self.rotate_in_place(90)
-                # Resume movement after obstacle is cleared
-                self.move_square()  # Resume the interrupted movement
-                break
-            rate.sleep()
+            while self.obstacle_detected:
+                rospy.loginfo("rotating")
+                self.rotate_in_place(90)
+                if self.obstacle_detected == False:
+                    self.move_square()
 
         self.stop_robot()
 

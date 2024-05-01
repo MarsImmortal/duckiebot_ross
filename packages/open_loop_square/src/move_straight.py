@@ -58,6 +58,7 @@ class Drive_Square:
                 self.stop_robot()  # Stop the robot if obstacle detected
                 # Rotate until obstacle is cleared
                 while self.obstacle_detected:
+                    rospy.loginfo("rotating")
                     self.rotate_in_place(90)
                 # Resume movement after obstacle is cleared
                 self.move_straight(distance)  # Resume the interrupted movement
