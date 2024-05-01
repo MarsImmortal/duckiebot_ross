@@ -35,7 +35,7 @@ class Drive_Square:
         self.current_ticks = msg.data
 
     def range_callback(self, msg):
-        obstacle_threshold = 0.2  # Adjust threshold as needed (in meters)
+        obstacle_threshold = 0.3  # Adjust threshold as needed (in meters)
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
             rospy.loginfo(msg.range)
