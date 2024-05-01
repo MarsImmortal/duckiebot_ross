@@ -52,7 +52,7 @@ class Drive_Square:
         rospy.loginfo(f"Moving Forward by {distance} meters...")
 
         rate = rospy.Rate(5)  # 10 Hz
-        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
+        while not self.current_ticks < target_ticks:
             while self.obstacle_detected:
                 rospy.loginfo("rotating")
                 self.rotate_in_place(90)
@@ -76,7 +76,7 @@ class Drive_Square:
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
         rate = rospy.Rate(5)  # 5 Hz
-        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
+        while not self.current_ticks < target_ticks:
             rate.sleep()
 
         self.stop_robot()
