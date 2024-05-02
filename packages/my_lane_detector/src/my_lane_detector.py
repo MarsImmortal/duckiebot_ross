@@ -35,8 +35,8 @@ class LaneDetector:
         # Define white and yellow color ranges in HSV
         white_lower = np.array([0, 0, 200], dtype=np.uint8)
         white_upper = np.array([180, 30, 255], dtype=np.uint8)
-        yellow_lower = np.array([20, 100, 100], dtype=np.uint8)
-        yellow_upper = np.array([40, 255, 255], dtype=np.uint8)
+        yellow_lower = np.array([15, 50, 50], dtype=np.uint8)
+        yellow_upper = np.array([35, 255, 255], dtype=np.uint8)
 
         # Create masks for white and yellow color ranges
         white_mask = cv2.inRange(hsv_img, white_lower, white_upper)
