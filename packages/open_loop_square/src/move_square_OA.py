@@ -24,7 +24,7 @@ class Drive_Square:
     def encoder_callback(self, msg):
         self.current_ticks = msg.data
 
-    def range_callback(self, msg):
+    def range_callback(self, msg):  
         if msg.range < self.obstacle_threshold:
             self.obstacle_detected = True
         else:
@@ -52,7 +52,7 @@ class Drive_Square:
 
     def rotate_to_clear_obstacle(self):
         target_angle = 30  # Rotate by 30 degrees to scan for clear path
-        target_ticks = self.current_ticks + int(target_angle / 90.0 * self.ticks_per_meter)
+        target_ticks = self.current_ticks + int(target_angle)
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
@@ -70,7 +70,7 @@ class Drive_Square:
             self.rotate_in_place(90)
 
     def rotate_in_place(self, degrees):
-        target_ticks = self.current_ticks + int(degrees / 90.0 * self.ticks_per_meter)
+        target_ticks = self.current_ticks + int(degrees)
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
