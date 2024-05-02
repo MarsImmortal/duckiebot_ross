@@ -43,7 +43,7 @@ class LaneDetector:
         yellow_mask = cv2.inRange(hsv_img, yellow_lower, yellow_upper)
 
         # Apply Canny edge detection on the grayscale version of the cropped image
-        gray_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY)
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray_img, threshold1=50, threshold2=150)
 
         # Apply Hough transform to detect lines in the white-masked image
@@ -56,17 +56,18 @@ class LaneDetector:
         if white_lines is not None:
             for line in white_lines:
                 x1, y1, x2, y2 = line[0]
-                cv2.line(cropped_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
         if yellow_lines is not None:
             for line in yellow_lines:
                 x1, y1, x2, y2 = line[0]
-                cv2.line(cropped_img, (x1, y1), (x2, y2), (0, 255, 255), 2)
+                cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
 
         # Display the processed images in separate windows
         cv2.imshow('Lane Detection - Cropped Image', cropped_img)
         cv2.imshow('Lane Detection - White Mask', white_mask)
         cv2.imshow('Lane Detection - Yellow Mask', yellow_mask)
+        cv2.imshow('Lane Detection - orignal', img)
         cv2.imshow('Canny Edge Detection', edges)
         cv2.waitKey(1)
 
