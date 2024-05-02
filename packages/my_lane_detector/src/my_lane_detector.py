@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+[ERROR] [1714675414.918635]: bad callback: <bound method LaneDetector.image_callback of <__main__.LaneDetector object at 0xffff848838b0>>
+Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rospy/topics.py", line 750, in _invoke_callback
+    cb(msg)
+  File "my_lane_detector.py", line 33, in image_callback
+    hsv_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2HSV)
+cv2.error: OpenCV(4.9.0) /io/opencv/modules/imgproc/src/color.cpp:196: error: (-215:Assertion failed) !_src.empty() in function 'cvtColor'
 
 import numpy as np
 import cv2
