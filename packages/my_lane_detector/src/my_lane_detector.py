@@ -53,7 +53,7 @@ class LaneDetector:
         yellow_mask = cv2.inRange(hsv_img, yellow_lower, yellow_upper)
 
         # Apply Canny edge detection on the cropped image
-        edges = cv2.Canny(cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY), threshold1=50, threshold2=150)
+        edges = cv2.Canny(cv2.cvtColor(cropped_img, cv2.COLOR_BGR2GRAY), threshold1=100, threshold2=150)
 
         # Apply Hough transform to detect lines in the white-masked image
         white_lines = cv2.HoughLinesP(white_mask, rho=1, theta=np.pi/180, threshold=20, minLineLength=20, maxLineGap=10)
@@ -74,6 +74,8 @@ class LaneDetector:
 
         # Display the processed image with detected lines
         cv2.imshow('Lane Detection', cropped_img)
+        cv2.imshow('Lane Detection', white_mask)
+        cv2.imshow('Lane Detection', yellow_mask)
         cv2.waitKey(1)
 
     def run(self):
