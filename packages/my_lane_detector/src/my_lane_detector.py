@@ -16,8 +16,9 @@ class LaneDetector:
     def __init__(self):
         self.cv_bridge = CvBridge()
 
-        # Subscribe to the image topic (change topic name accordingly)
+        #### REMEMBER TO CHANGE THE TOPIC NAME! #####        
         self.image_sub = rospy.Subscriber('/akandb/camera_node/image/compressed', CompressedImage, self.image_callback, queue_size=1)
+        #############################################
 
         rospy.init_node("my_lane_detector")
 
