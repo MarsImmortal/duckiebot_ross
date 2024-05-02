@@ -30,7 +30,7 @@ class LaneDetector:
         cropped_img = img[roi_top:roi_bottom, roi_left:roi_right]
 
         # Convert cropped image to HSV color space
-        hsv_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2HSV)
+        hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
         # Define white and yellow color ranges in HSV
         white_lower = np.array([0, 0, 200], dtype=np.uint8)
