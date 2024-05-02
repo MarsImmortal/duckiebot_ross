@@ -23,11 +23,9 @@ class Drive_Square:
         rospy.loginfo("State: %s", msg.state)
 
         if msg.state == "NORMAL_JOYSTICK_CONTROL":
-            rospy.loginfo("Switching to Normal Joystick Control Mode...")
             self.stop_robot()  # Stop the robot if in joystick control mode
         elif msg.state == "LANE_FOLLOWING":
             rospy.sleep(1)  # Wait for a second for the node to be ready
-            rospy.loginfo("Executing Lane Following Mode...")
             self.move_square()  # Execute square pattern
 
     def encoder_callback(self, msg):
@@ -37,8 +35,6 @@ class Drive_Square:
         obstacle_threshold = 0.3  # Adjust threshold as needed (in meters)
         if msg.range < obstacle_threshold:
             self.obstacle_detected = True
-            rospy.loginfo("Obstacle Detected: Stopping...")
-            self.stop_robot()
         else:
             self.obstacle_detected = False
 
@@ -54,12 +50,11 @@ class Drive_Square:
         rate = rospy.Rate(5)  # 10 Hz
         while not self.current_ticks < target_ticks:
             while self.obstacle_detected:
+                self.stop_robot()
                 rospy.loginfo("rotating")
                 self.rotate_in_place(90)
                 if self.obstacle_detected == False:
                     self.move_straight(distance)
-
-        self.stop_robot()
 
     def move_square(self):
         for _ in range(4):  # Perform the square pattern four times
