@@ -22,7 +22,12 @@ class LaneDetector:
         img = self.cv_bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
 
         # Crop the image to focus on the road region (adjust crop coordinates as needed)
-        cropped_img = img[100:120, 200:240]
+        height, width, _ = img.shape
+        roi_top = int(height * 0.8)
+        roi_bottom = height
+        roi_left = int(width * 0.4)
+        roi_right = int(width * 0.6)
+        cropped_img = img[roi_top:roi_bottom, roi_left:roi_right]
 
         # Convert cropped image to HSV color space
         hsv_img = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2HSV)
