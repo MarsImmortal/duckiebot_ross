@@ -70,10 +70,15 @@ class TargetFollower:
 
     # Method to rotate the robot towards the AprilTag
     def rotate_robot(self, angle_to_tag):
-        # Calculate the angular velocity based on the error term
-        omega = angle_to_tag * 0.5  # Proportional control with scaling factor
+        # Calculate the angular velocity based on the sign of the error term
+        if angle_to_tag > 0:
+            omega = -self.max_omega
+        else:
+            omega = self.max_omega
+
         # Apply minimum and maximum limits
         omega = max(self.min_omega, min(self.max_omega, omega))
+
         # Publish the rotation command to the robot
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
