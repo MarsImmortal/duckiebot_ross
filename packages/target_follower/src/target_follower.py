@@ -1,7 +1,6 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
-import math
 
 class TargetFollower:
     def __init__(self):
@@ -49,31 +48,8 @@ class TargetFollower:
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0  # No forward movement
-            
-            # Set the desired angular velocity for spinning
             cmd_msg.omega = 1.0  # Constant angular velocity for spinning
-            
-            # Publish the command to start spinning
             self.cmd_vel_pub.publish(cmd_msg)
-
-            # Wait for 1 second
-            rospy.sleep(1.0)
-
-            # Calculate the target angle (in radians) for a 20-degree turn
-            target_angle = math.radians(20)
-
-            # Calculate the angular velocity required to achieve a 20-degree turn in 1 second
-            # Angular velocity (omega) = Angle (in radians) / Time (in seconds)
-            angular_velocity = target_angle / 1.0  # 1 second for a 20-degree turn
-            
-            # Update the angular velocity in the command message
-            cmd_msg.omega = angular_velocity
-
-            # Publish the command to make the robot spin 20 degrees
-            self.cmd_vel_pub.publish(cmd_msg)
-
-            # Wait for 1 second (to complete the 20-degree turn)
-            rospy.sleep(1.0)
 
 if __name__ == '__main__':
     try:
