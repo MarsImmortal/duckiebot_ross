@@ -28,16 +28,18 @@ class TargetFollower:
     # Callback function for AprilTag detections
     def tag_callback(self, msg):
         if len(msg.detections) > 0:
+            # AprilTag detected
             self.tag_visible = True
-            # Get the position of the first detected AprilTag
             tag_position = msg.detections[0].transform.translation
             rospy.loginfo("AprilTag position (x, y, z): (%.2f, %.2f, %.2f)", tag_position.x, tag_position.y, tag_position.z)
-            # Move the robot to face the AprilTag
-            self.move_robot(tag_position)
+            if abs(tag_position.x) < 0.05:  # If tag is close to center
+                self.stop_robot()
+            else:
+                self.move_robot(tag_position)
         else:
+            # No AprilTag detected
             self.tag_visible = False
-            # Stop the robot if no AprilTag is detected
-            self.stop_robot()
+            self.keep_spinning()
 
     # Method to stop the robot completely
     def stop_robot(self):
@@ -47,10 +49,22 @@ class TargetFollower:
         cmd_msg.omega = 0.0
         self.cmd_vel_pub.publish(cmd_msg)
 
-    # Method to move the robot to face the AprilTag
+    # Method to make the robot spin continuously
+    def keep_spinning(self):
+        cmd_msg = Twist2DStamped()
+        cmd_msg.header.stamp = rospy.Time.now()
+        cmd_msg.v = 0  # No forward movement
+        cmd_msg.omega = 1.0  # Constant angular velocity for spinning
+        self.cmd_vel_pub.publish(cmd_msg)
+
+    # Method to move the robot to face the AprilTag at the desired position
     def move_robot(self, tag_position):
-        # Calculate the rotation angle based on the AprilTag position
-        angle_to_tag = -math.atan2(tag_position.y, tag_position.x)  # Adjust direction based on camera orientation
+        # Desired x-coordinate of the AprilTag (center of the camera frame)
+        desired_x = 0.0
+
+        # Calculate the angle between the current position and the desired position
+        angle_to_tag = math.atan2(desired_x - tag_position.x, tag_position.y)
+
         # Apply control algorithm
         self.rotate_robot(angle_to_tag)
 
