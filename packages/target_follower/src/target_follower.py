@@ -2,15 +2,18 @@ import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
 import math
+import time
+import signal
+import sys
 
 class TargetFollower:
     def __init__(self):
         # Initialize the ROS node
         rospy.init_node('target_follower_node', anonymous=True)
 
-        # Setup shutdown function
-        rospy.on_shutdown(self.clean_shutdown)
-        
+        # Setup signal handler for SIGINT (Ctrl+C)
+        signal.signal(signal.SIGINT, self.signal_handler)
+
         # Publisher and subscriber initialization
         self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
@@ -34,6 +37,12 @@ class TargetFollower:
     def clean_shutdown(self):
         rospy.loginfo("System shutting down. Stopping robot...")
         self.stop_robot()
+        rospy.signal_shutdown("Shutdown requested")
+
+    # Signal handler for SIGINT (Ctrl+C)
+    def signal_handler(self, signal, frame):
+        rospy.loginfo("Received shutdown signal (Ctrl+C)")
+        self.clean_shutdown()
 
     # Method to stop the robot completely
     def stop_robot(self):
@@ -49,15 +58,17 @@ class TargetFollower:
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0  # No forward movement
         
+        # Set the desired angular velocity for spinning
+        cmd_msg.omega = 2.0
+        
         # Rotate 10 degrees (in radians)
         target_angle = math.radians(10)
-        cmd_msg.omega = 1.0  # Constant angular velocity for spinning
         
-        # Publish the command for a short duration to make a 10-degree turn
-        duration = rospy.Duration.from_sec(0.5)  # Adjust the duration as needed
-        start_time = rospy.Time.now()
-        while rospy.Time.now() - start_time < duration:
-            self.cmd_vel_pub.publish(cmd_msg)
+        # Publish the command to make a 10-degree turn
+        self.cmd_vel_pub.publish(cmd_msg)
+        
+        # Pause for 0.5 seconds after every 10 degrees rotation
+        time.sleep(0.5)
 
     # Method to continuously spin the robot
     def keep_spinning(self):
