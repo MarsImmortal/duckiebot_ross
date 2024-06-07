@@ -1,6 +1,7 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
+import math
 
 class TargetFollower:
     def __init__(self):
@@ -27,7 +28,7 @@ class TargetFollower:
             self.stop_robot()
         else:
             self.tag_detected = False
-            self.keep_spinning()
+            self.adjust_rotation()
 
     # Stop the robot safely on shutdown
     def clean_shutdown(self):
@@ -42,13 +43,29 @@ class TargetFollower:
         cmd_msg.omega = 0.0
         self.cmd_vel_pub.publish(cmd_msg)
 
+    # Method to make short adjustments in rotation
+    def adjust_rotation(self):
+        cmd_msg = Twist2DStamped()
+        cmd_msg.header.stamp = rospy.Time.now()
+        cmd_msg.v = 0  # No forward movement
+        
+        # Rotate 10 degrees (in radians)
+        target_angle = math.radians(10)
+        cmd_msg.omega = 1.0  # Constant angular velocity for spinning
+        
+        # Publish the command for a short duration to make a 10-degree turn
+        duration = rospy.Duration.from_sec(0.5)  # Adjust the duration as needed
+        start_time = rospy.Time.now()
+        while rospy.Time.now() - start_time < duration:
+            self.cmd_vel_pub.publish(cmd_msg)
+
     # Method to continuously spin the robot
     def keep_spinning(self):
         if not self.tag_detected:
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0  # No forward movement
-            cmd_msg.omega = 1.0  # Constant angular velocity for spinning
+            cmd_msg.omega = 2.0  # Constant angular velocity for spinning
             self.cmd_vel_pub.publish(cmd_msg)
 
 if __name__ == '__main__':
