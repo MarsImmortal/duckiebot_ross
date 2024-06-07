@@ -17,6 +17,13 @@ class TargetFollower:
         self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
+        # Define control parameters
+        self.max_omega = 2.0  # Maximum angular velocity
+        self.min_omega = 0.5  # Minimum angular velocity
+        self.deadband = 0.1  # Deadband around zero angular velocity
+        self.high_friction_factor = 2  # Factor to increase omega for high ground friction
+        self.tag_visible = False  # Flag to indicate if AprilTag is visible
+
         # Start the ROS loop
         rospy.spin()
 
@@ -36,19 +43,11 @@ class TargetFollower:
 
     # Method to stop the robot completely
     def stop_robot(self):
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0.0
-        cmd_msg.omega = 0.0
-        self.cmd_vel_pub.publish(cmd_msg)
+        self.publish_cmd_vel(0.0, 0.0)
 
     # Method to make the robot spin continuously
     def keep_spinning(self):
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0  # No forward movement
-        cmd_msg.omega = 1.0  # Constant angular velocity for spinning
-        self.cmd_vel_pub.publish(cmd_msg)
+        self.publish_cmd_vel(0.0, 1.0)  # Constant angular velocity for spinning
 
     # Method to move the robot to face the AprilTag at the desired position
     def move_robot(self, tag_position):
@@ -58,18 +57,26 @@ class TargetFollower:
         # Calculate the angle between the current position and the desired position
         angle_to_tag = math.atan2(desired_x - tag_position.x, tag_position.y)
 
-        # Adjust sign of omega based on the value of x
-        if tag_position.x < 0:
-            omega = abs(self.calculate_omega(angle_to_tag))
-        else:
-            omega = -abs(self.calculate_omega(angle_to_tag))
+        # Adjust sign and magnitude of omega based on the angle
+        omega = self.calculate_omega(angle_to_tag)
 
         # Publish the rotation command to the robot
         self.publish_cmd_vel(0.0, omega)
 
     # Method to calculate omega based on the angle
     def calculate_omega(self, angle_to_tag):
-        return angle_to_tag * 0.5  # Proportional control with scaling factor
+        # Proportional control with scaling factor
+        omega = angle_to_tag * 0.5
+
+        # Adjust omega for high ground friction and opposite rotations
+        if omega < 0:
+            omega *= self.high_friction_factor
+
+        # Apply deadband around zero angular velocity
+        if abs(omega) < self.deadband:
+            omega = 0.0
+
+        return omega
 
     # Method to publish Twist2DStamped message
     def publish_cmd_vel(self, v, omega):
