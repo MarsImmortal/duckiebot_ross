@@ -24,8 +24,6 @@ class TargetFollower:
     def tag_callback(self, msg):
         if len(msg.detections) > 0:
             self.tag_detected = True
-            tag_ids = [tag.id for tag in msg.detections]
-            rospy.loginfo("AprilTag detected with IDs: %s" % tag_ids)
             self.stop_robot()
         else:
             self.tag_detected = False
