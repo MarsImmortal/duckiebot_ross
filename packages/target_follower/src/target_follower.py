@@ -1,6 +1,7 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
+import math
 
 class TargetFollower:
     def __init__(self):
