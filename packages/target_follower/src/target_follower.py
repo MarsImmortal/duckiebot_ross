@@ -21,9 +21,6 @@ class TargetFollower:
         # Flag to indicate if AprilTag is detected
         self.tag_detected = False
 
-        # Start the ROS loop
-        rospy.spin()
-
     # Callback function for AprilTag detections
     def tag_callback(self, msg):
         if len(msg.detections) > 0:
