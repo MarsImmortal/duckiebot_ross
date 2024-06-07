@@ -68,7 +68,7 @@ class TargetFollower:
         self.cmd_vel_pub.publish(cmd_msg)
         
         # Pause for 0.5 seconds after every 10 degrees rotation
-        time.sleep(0.5)
+        time.sleep(1)
 
     # Method to continuously spin the robot
     def keep_spinning(self):
