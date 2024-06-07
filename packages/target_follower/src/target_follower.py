@@ -49,14 +49,10 @@ class TargetFollower:
 
     # Method to move the robot to face the AprilTag
     def move_robot(self, tag_position):
-        # Calculate the distance from the robot's center to the AprilTag
-        distance_to_tag = math.sqrt(tag_position.x**2 + tag_position.y**2)
-        # Calculate the angle to face the center of the AprilTag
-        angle_to_tag_center = math.atan2(tag_position.y, tag_position.x)
-        # Calculate the angle to rotate the robot to face the center of the AprilTag
-        angle_to_center = angle_to_tag_center - math.atan2(self.robot_center_offset_y, self.robot_center_offset_x)
+        # Calculate the rotation angle based on the AprilTag position
+        angle_to_tag = -math.atan2(tag_position.y, tag_position.x)  # Adjust direction based on camera orientation
         # Apply control algorithm
-        self.rotate_robot(angle_to_center)
+        self.rotate_robot(angle_to_tag)
 
     # Method to rotate the robot towards the AprilTag
     def rotate_robot(self, angle_to_tag):
