@@ -40,6 +40,7 @@ class TargetFollower:
                 self.move_robot(tag_position)
         else:
             # No AprilTag detected
+            rospy.loginfo("No AprilTag detected.")
             self.tag_visible = False
             self.keep_spinning()
 
