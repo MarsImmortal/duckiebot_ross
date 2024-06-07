@@ -3,6 +3,7 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
+import math
 
 class Target_Follower:
     def __init__(self):
@@ -25,8 +26,16 @@ class Target_Follower:
     # Callback function for AprilTag detections
     def tag_callback(self, msg):
         if len(msg.detections) > 0:
-            self.stop_robot()
+            # Get the first detected AprilTag
+            detection = msg.detections[0]
+            
+            # Calculate the angle between the robot's current heading and the AprilTag
+            angle_to_tag = math.atan2(detection.transform.translation.y, detection.transform.translation.x)
+            
+            # Rotate the robot by the calculated angle
+            self.rotate_robot(angle_to_tag)
         else:
+            # No AprilTag detected, continue spinning
             self.keep_spinning()
 
     # Stop the robot safely on shutdown
@@ -48,6 +57,14 @@ class Target_Follower:
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0  # No forward movement
         cmd_msg.omega = 1.0  # Constant angular velocity for spinning
+        self.cmd_vel_pub.publish(cmd_msg)
+
+    # Method to rotate the robot by a specified angle
+    def rotate_robot(self, angle):
+        cmd_msg = Twist2DStamped()
+        cmd_msg.header.stamp = rospy.Time.now()
+        cmd_msg.v = 0  # No forward movement
+        cmd_msg.omega = angle  # Set the angular velocity to the calculated angle
         self.cmd_vel_pub.publish(cmd_msg)
 
 if __name__ == '__main__':
