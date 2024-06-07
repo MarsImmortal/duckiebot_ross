@@ -20,7 +20,7 @@ class TargetFollower:
         # Define control parameters
         self.max_omega = math.radians(4.0)  # Maximum angular velocity in radians
         self.min_omega = math.radians(2.0)  # Minimum angular velocity in radians
-        self.max_linear_speed = 0.2  # Maximum linear speed in meters per second
+        self.max_linear_speed = 3  # Maximum linear speed in meters per second
         self.goal_distance_min = 0.2  # Minimum goal distance to the AprilTag in meters
         self.goal_distance_max = 0.4  # Maximum goal distance to the AprilTag in meters
         self.deadband = 0.1  # Deadband around zero angular velocity
