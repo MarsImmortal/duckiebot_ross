@@ -14,8 +14,8 @@ class TargetFollower:
         rospy.on_shutdown(self.clean_shutdown)
         
         # Publisher and subscriber initialization
-        self.cmd_vel_pub = rospy.Publisher('/your_robot_name/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
-        rospy.Subscriber('/your_robot_name/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
+        self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
+        rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
         # Define control parameters
         self.max_omega = 2.0  # Maximum angular velocity
