@@ -50,7 +50,7 @@ class TargetFollower:
 
     # Method to make the robot spin continuously
     def keep_spinning(self):
-        self.publish_cmd_vel(0.0,2.0)  # Constant angular velocity for spinning
+        self.publish_cmd_vel(0.0, math.radians(2.0))  # Constant angular velocity for spinning
 
     # Method to move the robot to face the AprilTag at the desired position
     def move_robot(self, tag_position):
