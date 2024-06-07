@@ -18,8 +18,8 @@ class TargetFollower:
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
         # Define control parameters
-        self.max_omega = 2.0  # Maximum angular velocity
-        self.min_omega = 0.5  # Minimum angular velocity
+        self.max_omega = 4.0  # Maximum angular velocity
+        self.min_omega = 2.0  # Minimum angular velocity
         self.deadband = 0.1  # Deadband around zero angular velocity
         self.high_friction_factor = 2  # Factor to increase omega for high ground friction
         self.tag_visible = False  # Flag to indicate if AprilTag is visible
