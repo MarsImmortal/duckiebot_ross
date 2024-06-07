@@ -3,6 +3,7 @@
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import AprilTagDetectionArray
+import math
 
 class TargetFollower:
     def __init__(self):
@@ -49,7 +50,7 @@ class TargetFollower:
     # Method to move the robot to face the AprilTag
     def move_robot(self, tag_position):
         # Calculate the rotation angle based on the AprilTag position
-        angle_to_tag = -tag_position.y  # Adjust direction based on camera orientation
+        angle_to_tag = -math.atan2(tag_position.y, tag_position.x)  # Adjust direction based on camera orientation
         # Apply control algorithm
         self.rotate_robot(angle_to_tag)
 
