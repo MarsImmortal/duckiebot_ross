@@ -48,6 +48,8 @@ class Target_Follower:
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0  # No forward movement
         cmd_msg.omega = 1.0  # Constant angular velocity for spinning
+        cmd_msg.omega_right = -cmd_msg.omega
+        cmd_msg.omega_left = cmd_msg.omega
         self.cmd_vel_pub.publish(cmd_msg)
 
 if __name__ == '__main__':
