@@ -41,7 +41,6 @@ class TargetFollower:
             # No AprilTag detected
             rospy.loginfo("No AprilTag detected.")
             self.tag_visible = False
-            self.keep_spinning()
 
     # Method to stop the robot completely
     def stop_robot(self):
