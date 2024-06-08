@@ -36,10 +36,7 @@ class TargetFollower:
             self.tag_visible = True
             tag_position = msg.detections[0].transform.translation
             rospy.loginfo("AprilTag position (x, y, z): (%.2f, %.2f, %.2f)", tag_position.x, tag_position.y, tag_position.z)
-            if tag_position.z < self.goal_distance_min or tag_position.z > self.goal_distance_max:  # If tag is out of desired distance range
-                self.move_robot(tag_position)
-            else:
-                self.stop_robot()
+            self.move_robot(tag_position)
         else:
             # No AprilTag detected
             rospy.loginfo("No AprilTag detected.")
@@ -60,9 +57,12 @@ class TargetFollower:
         angle_to_tag = math.atan2(tag_position.x, tag_position.z)
         omega = self.calculate_omega(angle_to_tag)
 
-        # Calculate the linear speed to maintain the goal distance
-        distance_error = tag_position.z - self.goal_distance_max if tag_position.z > self.goal_distance_max else self.goal_distance_min - tag_position.z
-        linear_speed = self.calculate_linear_speed(distance_error)
+        # Calculate the linear speed to maintain the goal distance if tag is out of desired distance range
+        if tag_position.z < self.goal_distance_min or tag_position.z > self.goal_distance_max:
+            distance_error = tag_position.z - self.goal_distance_max if tag_position.z > self.goal_distance_max else self.goal_distance_min - tag_position.z
+            linear_speed = self.calculate_linear_speed(distance_error)
+        else:
+            linear_speed = 0.0  # Stop linear movement if within the desired range
 
         # Publish the motion command to the robot
         self.publish_cmd_vel(linear_speed, omega)
