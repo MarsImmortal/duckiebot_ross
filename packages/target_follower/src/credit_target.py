@@ -18,8 +18,8 @@ class TargetFollower:
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
         # Define control parameters
-        self.max_omega = math.radians(180.0)  # Maximum angular velocity in radians per second
-        self.min_omega = math.radians(10.0)  # Minimum angular velocity in radians per second
+        self.max_omega = math.radians(90.0)  # Maximum angular velocity in radians per second
+        self.min_omega = math.radians(5.0)  # Minimum angular velocity in radians per second
         self.max_linear_speed = 1.0  # Maximum linear speed in meters per second
         self.goal_distance_min = 0.15  # Minimum goal distance to the AprilTag in meters
         self.goal_distance_max = 0.25  # Maximum goal distance to the AprilTag in meters
@@ -36,11 +36,15 @@ class TargetFollower:
             self.tag_visible = True
             tag_position = msg.detections[0].transform.translation
             rospy.loginfo("AprilTag position (x, y, z): (%.2f, %.2f, %.2f)", tag_position.x, tag_position.y, tag_position.z)
-            self.move_robot(tag_position)
+            if tag_position.z < self.goal_distance_min or tag_position.z > self.goal_distance_max:  # If tag is out of desired distance range
+                self.move_robot(tag_position)
+            else:
+                self.stop_robot()
         else:
             # No AprilTag detected
             rospy.loginfo("No AprilTag detected.")
             self.tag_visible = False
+            self.keep_spinning()
 
     # Method to stop the robot completely
     def stop_robot(self):
@@ -56,12 +60,9 @@ class TargetFollower:
         angle_to_tag = math.atan2(tag_position.x, tag_position.z)
         omega = self.calculate_omega(angle_to_tag)
 
-        # Calculate the linear speed to maintain the goal distance if tag is out of desired distance range
-        if tag_position.z < self.goal_distance_min or tag_position.z > self.goal_distance_max:
-            distance_error = tag_position.z - self.goal_distance_max if tag_position.z > self.goal_distance_max else self.goal_distance_min - tag_position.z
-            linear_speed = self.calculate_linear_speed(distance_error)
-        else:
-            linear_speed = 0.0  # Stop linear movement if within the desired range
+        # Calculate the linear speed to maintain the goal distance
+        distance_error = tag_position.z - self.goal_distance_max if tag_position.z > self.goal_distance_max else self.goal_distance_min - tag_position.z
+        linear_speed = self.calculate_linear_speed(distance_error)
 
         # Publish the motion command to the robot
         self.publish_cmd_vel(linear_speed, omega)
@@ -69,7 +70,7 @@ class TargetFollower:
     # Method to calculate omega based on the angle
     def calculate_omega(self, angle_to_tag):
         # Proportional control with scaling factor
-        omega = -angle_to_tag * 5.0  # Reversed and further increased gain for better response
+        omega = -angle_to_tag * 2.0  # Reversed and increased gain for better response
 
         # Apply deadband around zero angular velocity
         if abs(omega) < self.deadband:
