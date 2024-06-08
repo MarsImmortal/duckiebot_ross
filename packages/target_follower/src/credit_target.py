@@ -18,9 +18,9 @@ class TargetFollower:
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
         # Define control parameters
-        self.max_omega = math.radians(20.0)  # Maximum angular velocity in radians per second
-        self.min_omega = math.radians(2.0)  # Minimum angular velocity in radians per second
-        self.max_linear_speed = 3.0  # Maximum linear speed in meters per second
+        self.max_omega = math.radians(90.0)  # Maximum angular velocity in radians per second
+        self.min_omega = math.radians(5.0)  # Minimum angular velocity in radians per second
+        self.max_linear_speed = 1.0  # Maximum linear speed in meters per second
         self.goal_distance_min = 0.15  # Minimum goal distance to the AprilTag in meters
         self.goal_distance_max = 0.25  # Maximum goal distance to the AprilTag in meters
         self.deadband = math.radians(1.0)  # Deadband around zero angular velocity
@@ -70,7 +70,7 @@ class TargetFollower:
     # Method to calculate omega based on the angle
     def calculate_omega(self, angle_to_tag):
         # Proportional control with scaling factor
-        omega = angle_to_tag * 1.0
+        omega = -angle_to_tag * 2.0  # Reversed and increased gain for better response
 
         # Apply deadband around zero angular velocity
         if abs(omega) < self.deadband:
@@ -84,7 +84,7 @@ class TargetFollower:
     # Method to calculate linear speed based on distance error
     def calculate_linear_speed(self, distance_error):
         # Proportional control with scaling factor
-        linear_speed = distance_error * 0.1
+        linear_speed = distance_error * 2.0  # Increased gain for overcoming friction
 
         # Clamp linear speed within limits
         linear_speed = max(min(linear_speed, self.max_linear_speed), -self.max_linear_speed)
