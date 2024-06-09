@@ -27,7 +27,7 @@ class TargetFollower:
         self.tag_visible = False  # Flag to indicate if AprilTag is visible
 
         # Define the stop sign tag ID
-        self.stop_sign_id = 25  # Update with the correct tag ID for the stop sign
+        self.stop_sign_id = 25  # update the tag with teh sign you wanna follow currenly : stop
 
         # Start the ROS loop
         rospy.spin()
