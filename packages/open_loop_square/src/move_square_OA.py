@@ -26,8 +26,12 @@ class Drive_Square:
         self.current_ticks = msg.data
 
     def range_callback(self, msg):  
-        if msg.range < self.obstacle_threshold:
-            self.obstacle_detected = True
+        # Validate the range data
+        if msg.range >= msg.min_range and msg.range <= msg.max_range:
+            if msg.range < self.obstacle_threshold:
+                self.obstacle_detected = True
+            else:
+                self.obstacle_detected = False
         else:
             self.obstacle_detected = False
 
