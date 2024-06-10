@@ -8,8 +8,11 @@ class Drive_Square:
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
         self.current_ticks = 0
         self.start_ticks = 0
+        self.min_range = 0.05  # Minimum range for obstacle detection (in meters)
+        self.max_range = 1.2  # Maximum range for obstacle detection (in meters)
         self.obstacle_threshold = 0.3
         self.obstacle_detected = False
+        self.moving_forward = False
 
         rospy.init_node('drive_square_node', anonymous=True)
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
@@ -25,26 +28,28 @@ class Drive_Square:
     def encoder_callback(self, msg):
         self.current_ticks = msg.data
 
-    def range_callback(self, msg):  
-        # Validate the range data
-        if msg.range >= msg.min_range and msg.range <= msg.max_range:
+    def range_callback(self, msg):
+        if msg.range >= self.min_range and msg.range <= self.max_range:
             if msg.range < self.obstacle_threshold:
-                self.obstacle_detected = True
+                if not self.obstacle_detected:  # Only update if obstacle status changed
+                    self.obstacle_detected = True
+                    if self.moving_forward:
+                        self.stop_robot()
+                        self.moving_forward = False
             else:
-                self.obstacle_detected = False
-        else:
-            self.obstacle_detected = False
+                if self.obstacle_detected:  # Only update if obstacle status changed
+                    self.obstacle_detected = False
+                    if not self.moving_forward:
+                        self.start_ticks = self.current_ticks
+                        self.moving_forward = True
 
     def move_straight(self, distance):
-        self.start_ticks = self.current_ticks
         target_ticks = self.start_ticks + int(distance * self.ticks_per_meter)
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
             if self.obstacle_detected:
                 self.stop_robot()
-                self.rotate_to_clear_obstacle()  # Rotate to find a clear path
-                self.move_square()  # Restart the square movement
                 return
             else:
                 self.cmd_msg.header.stamp = rospy.Time.now()
@@ -53,28 +58,16 @@ class Drive_Square:
                 self.pub.publish(self.cmd_msg)
                 rate.sleep()
 
-        self.stop_robot()
-
-    def rotate_to_clear_obstacle(self):
-        rate = rospy.Rate(10)
-        self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 1.0  # Angular velocity (adjust as needed)
-
-        for _ in range(30):  # Rotate for a fixed duration to clear the obstacle
-            self.pub.publish(self.cmd_msg)
-            rate.sleep()
-
-        self.stop_robot()
-
     def move_square(self):
         for _ in range(4):
             self.move_straight(1.0)
+            if self.obstacle_detected:  # Check if an obstacle is detected while moving
+                while self.obstacle_detected:  # Wait until the obstacle is removed
+                    rospy.sleep(1)  # Check every second if the obstacle is removed
             self.rotate_in_place(90)
 
     def rotate_in_place(self, degrees):
-        self.start_ticks = self.current_ticks
-        target_ticks = self.start_ticks + int(degrees * self.ticks_per_meter / 360)  # Adjust for rotational ticks
+        target_ticks = self.current_ticks + int(degrees * self.ticks_per_meter / 360)  # Adjust for rotational ticks
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
@@ -83,8 +76,6 @@ class Drive_Square:
             self.cmd_msg.omega = 1.0  # Angular velocity (adjust as needed)
             self.pub.publish(self.cmd_msg)
             rate.sleep()
-
-        self.stop_robot()
 
     def stop_robot(self):
         self.cmd_msg.header.stamp = rospy.Time.now()
