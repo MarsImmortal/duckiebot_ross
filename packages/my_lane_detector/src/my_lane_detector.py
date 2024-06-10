@@ -64,11 +64,11 @@ class LaneDetector:
                 cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
 
         # Display the processed images in separate windows
-        cv2.imshow('trim', cropped_img)
-        cv2.imshow('WhiteMask', white_mask)
-        cv2.imshow('YellowMask', yellow_mask)
-        cv2.imshow('Orignal', img)
-        cv2.imshow('Hough Transforms', edges)
+        cv2.imshow('Lane Detection - Cropped Image', cropped_img)
+        cv2.imshow('Lane Detection - White Mask', white_mask)
+        cv2.imshow('Lane Detection - Yellow Mask', yellow_mask)
+        cv2.imshow('Lane Detection - orignal', img)
+        cv2.imshow('Canny Edge Detection', edges)
         cv2.waitKey(1)
 
     def run(self):
