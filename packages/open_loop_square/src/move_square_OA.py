@@ -7,6 +7,7 @@ class Drive_Square:
         self.cmd_msg = Twist2DStamped()
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
         self.current_ticks = 0
+        self.start_ticks = 0
         self.obstacle_threshold = 0.3
         self.obstacle_detected = False
 
@@ -31,16 +32,16 @@ class Drive_Square:
             self.obstacle_detected = False
 
     def move_straight(self, distance):
-        target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
+        self.start_ticks = self.current_ticks
+        target_ticks = self.start_ticks + int(distance * self.ticks_per_meter)
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
             if self.obstacle_detected:
                 self.stop_robot()
                 self.rotate_to_clear_obstacle()  # Rotate to find a clear path
-                self.obstacle_detected = False  # Reset obstacle flag after clearance
-                self.move_straight(distance)  # Resume movement
-                break
+                self.move_square()  # Restart the square movement
+                return
             else:
                 self.cmd_msg.header.stamp = rospy.Time.now()
                 self.cmd_msg.v = 0.3  # Forward velocity (adjust as needed)
@@ -51,14 +52,12 @@ class Drive_Square:
         self.stop_robot()
 
     def rotate_to_clear_obstacle(self):
-        target_angle = 30  # Rotate by 30 degrees to scan for clear path
-        target_ticks = self.current_ticks + int(target_angle)
         rate = rospy.Rate(10)
+        self.cmd_msg.header.stamp = rospy.Time.now()
+        self.cmd_msg.v = 0.0
+        self.cmd_msg.omega = 1.0  # Angular velocity (adjust as needed)
 
-        while self.current_ticks < target_ticks:
-            self.cmd_msg.header.stamp = rospy.Time.now()
-            self.cmd_msg.v = 0.0
-            self.cmd_msg.omega = 1.0  # Angular velocity (adjust as needed)
+        for _ in range(30):  # Rotate for a fixed duration to clear the obstacle
             self.pub.publish(self.cmd_msg)
             rate.sleep()
 
@@ -70,7 +69,8 @@ class Drive_Square:
             self.rotate_in_place(90)
 
     def rotate_in_place(self, degrees):
-        target_ticks = self.current_ticks + int(degrees)
+        self.start_ticks = self.current_ticks
+        target_ticks = self.start_ticks + int(degrees * self.ticks_per_meter / 360)  # Adjust for rotational ticks
         rate = rospy.Rate(10)
 
         while self.current_ticks < target_ticks:
