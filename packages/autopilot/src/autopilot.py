@@ -13,37 +13,42 @@ class Autopilot:
         self.robot_state = "LANE_FOLLOWING"
         self.ignore_apriltag = False
 
-        # When shutdown signal is received, we run clean_shutdown function
+        # Register the clean_shutdown function to be called on shutdown
         rospy.on_shutdown(self.clean_shutdown)
         
-        ###### Init Pub/Subs. REMEMBER TO REPLACE "oryx" WITH YOUR ROBOT'S NAME #####
+        # Initialize Publishers
         self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         self.state_pub = rospy.Publisher('/oryx/fsm_node/mode', FSMState, queue_size=1)
+
+        # Initialize Subscriber
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
-        ################################################################
+        
+        # Spin to keep the script running and handle callbacks
+        rospy.spin() 
 
-        rospy.spin() # Spin forever but listen to message callbacks
-
-    # Apriltag Detection Callback
+    # Callback function for AprilTag detections
     def tag_callback(self, msg):
+        # Only process if the robot is in LANE_FOLLOWING state and we are not ignoring AprilTags
         if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag:
             return
         
+        # Process the detected AprilTags
         self.move_robot(msg.detections)
  
-    # Stop Robot before node has shut down. This ensures the robot doesn't keep moving with the latest velocity command
+    # Clean shutdown function to stop the robot safely
     def clean_shutdown(self):
         rospy.loginfo("System shutting down. Stopping robot...")
         self.stop_robot()
 
-    # Sends zero velocity to stop the robot
+    # Function to send zero velocity command to stop the robot
     def stop_robot(self):
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0.0
-        cmd_msg.omega = 0.0
+        cmd_msg.v = 0.0  # Zero linear velocity
+        cmd_msg.omega = 0.0  # Zero angular velocity
         self.cmd_vel_pub.publish(cmd_msg)
 
+    # Function to set the robot's state and publish it
     def set_state(self, state):
         self.robot_state = state
         state_msg = FSMState()
@@ -51,22 +56,27 @@ class Autopilot:
         state_msg.state = self.robot_state
         self.state_pub.publish(state_msg)
 
+    # Function to handle robot movement based on AprilTag detections
     def move_robot(self, detections):
         if len(detections) == 0:
             return
 
-        # Example: Stop at Stop Sign
+        # Loop through detected AprilTags
         for detection in detections:
             if detection.id == 1:  # Assuming tag ID 1 is the stop sign
                 rospy.loginfo("Stop sign detected. Stopping the robot...")
-                self.set_state("NORMAL_JOYSTICK_CONTROL") # Stop Lane Following
+                
+                # Change state to stop lane following
+                self.set_state("NORMAL_JOYSTICK_CONTROL")
+                
+                # Stop the robot
                 self.stop_robot()
                 rospy.sleep(3)  # Stop for 3 seconds
 
-                # Move forward a bit to ensure the stop sign is out of view
+                # Move forward to clear the stop sign
                 cmd_msg = Twist2DStamped()
                 cmd_msg.header.stamp = rospy.Time.now()
-                cmd_msg.v = 0.5  # Move forward with a velocity of 0.5
+                cmd_msg.v = 0.5  # Move forward with velocity 0.5
                 cmd_msg.omega = 0.0
                 self.cmd_vel_pub.publish(cmd_msg)
                 rospy.sleep(2)  # Move forward for 2 seconds
@@ -85,8 +95,11 @@ class Autopilot:
 
                 return
 
+# Main function
 if __name__ == '__main__':
     try:
+        # Create an instance of the Autopilot class and start the node
         autopilot_instance = Autopilot()
     except rospy.ROSInterruptException:
+        # Handle the case where the ROS node is interrupted
         pass
