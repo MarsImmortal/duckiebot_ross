@@ -4,6 +4,7 @@ import rospy
 from duckietown_msgs.msg import Twist2DStamped
 from duckietown_msgs.msg import FSMState
 
+
 class Drive_Square:
     def __init__(self):
         # Initialize global class variables
@@ -37,7 +38,7 @@ class Drive_Square:
     # Move the robot in a square pattern
     def move_square(self):
         # Define the side length of the square (adjust as needed)
-        side_length = 0.5  # meters
+        side_length = 0.8  # meters
 
         # Move the robot forward and then turn 90 degrees four times to form a square
         for _ in range(4):
@@ -52,7 +53,7 @@ class Drive_Square:
     # Move the robot forward by a specified distance (side_length)
     def move_forward(self, distance):
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.1  # Forward velocity (adjust as needed)
+        self.cmd_msg.v = 0.6  # Forward velocity (adjust as needed)
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
@@ -63,10 +64,10 @@ class Drive_Square:
         # Set the angular velocity to turn 90 degrees (adjust as needed)
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 0.5  # Adjust the angular velocity for a slower turn
+        self.cmd_msg.omega = 1  # Adjust the angular velocity for a slower turn
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Turning...")
-        rospy.sleep(1.57)
+        rospy.sleep(0.75)
         #self.stop_robot()  # Adjust sleep time for a 90-degree turn based on the turning speed
 
 
