@@ -38,7 +38,7 @@ class Drive_Square:
     # Move the robot in a square pattern
     def move_square(self):
         # Define the side length of the square (adjust as needed)
-        side_length = 0.8  # meters
+        side_length = 0.1  # meters
 
         # Move the robot forward and then turn 90 degrees four times to form a square
         for _ in range(4):

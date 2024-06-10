@@ -39,7 +39,7 @@ class Drive_Square:
 
         #YOUR CODE GOES HERE#
         self.cmd_msg.header.stamp = rospy.Time.now()
-        self.cmd_msg.v = 0.5 # striaght line velocity
+        self.cmd_msg.v = 0.1 # striaght line velocity
         self.cmd_msg.omega = 0.0
         self.pub.publish(self.cmd_msg)
         rospy.loginfo("Forward!")
