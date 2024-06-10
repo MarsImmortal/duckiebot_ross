@@ -8,6 +8,7 @@ class Drive_Square:
         self.obstacle_threshold = 0.3
         self.obstacle_detected = False
         self.square_side_length = 0.5
+        self.state = "WAITING"
 
         rospy.init_node('drive_square_node', anonymous=True)
         self.pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
@@ -15,13 +16,10 @@ class Drive_Square:
         rospy.Subscriber('/oryx/front_center_tof_driver_node/range', Range, self.range_callback, queue_size=1)
 
     def fsm_callback(self, msg):
-        if msg.state == "LANE_FOLLOWING":
-            rospy.loginfo("Executing Lane Following Mode...")
-            if not self.obstacle_detected:
-                self.move_square()
+        self.state = msg.state
 
     def range_callback(self, msg):
-        if msg.range >= 0.1 and msg.range <= 1.0:  # Obstacle detection range
+        if msg.range >= 0.25 and msg.range <= 1.0:  # Obstacle detection range
             if msg.range < self.obstacle_threshold:
                 self.obstacle_detected = True
             else:
@@ -41,24 +39,25 @@ class Drive_Square:
         rospy.loginfo("Robot Stopped")
 
     def move_square(self):
-        rospy.loginfo("Moving forward...")
-        while not self.obstacle_detected:
-            self.move_forward()
-            rospy.sleep(0.1)  # Check every 0.1 seconds if obstacle is detected
-        self.stop_robot()
-        rospy.loginfo("Obstacle detected, waiting for removal...")
-
-        while self.obstacle_detected:
-            rospy.sleep(0.1)  # Check every 0.1 seconds if obstacle is removed
-        rospy.loginfo("Obstacle removed, starting square movement...")
-
-        # Make a square of length 0.5
-        for _ in range(4):
-            self.move_forward()
-            rospy.sleep(self.square_side_length / 0.3)  # Adjust sleep time based on the robot's speed and required distance
+        if self.state == "LANE_FOLLOWING":
+            if not self.obstacle_detected:
+                rospy.loginfo("Moving forward...")
+                self.move_forward()
+            else:
+                self.stop_robot()
+                rospy.loginfo("Obstacle detected, waiting for removal...")
+        elif self.state == "WAITING" and self.obstacle_detected:
             self.stop_robot()
-            rospy.sleep(0.5)  # Wait for a moment before rotating
-            self.rotate(90)
+            rospy.loginfo("Obstacle removed, starting square movement...")
+            self.state = "MOVING_SQUARE"
+        elif self.state == "MOVING_SQUARE":
+            # Make a square of length 0.5
+            for _ in range(4):
+                self.move_forward()
+                rospy.sleep(self.square_side_length / 0.3)  # Adjust sleep time based on the robot's speed and required distance
+                self.stop_robot()
+                rospy.sleep(0.5)  # Wait for a moment before rotating
+                self.rotate(90)
 
     def rotate(self, angle):
         self.cmd_msg.header.stamp = rospy.Time.now()
@@ -69,7 +68,10 @@ class Drive_Square:
         self.stop_robot()
 
     def run(self):
-        rospy.spin()
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown():
+            self.move_square()
+            rate.sleep()
 
 if __name__ == '__main__':
     try:
