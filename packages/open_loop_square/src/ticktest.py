@@ -51,7 +51,7 @@ class Drive_Square:
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 1  # Angular velocity for a 90-degree turn (adjust as needed)
+        self.cmd_msg.omega = 2.5  # Angular velocity for a 90-degree turn (adjust as needed)
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
