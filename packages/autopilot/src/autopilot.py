@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray
+from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray, WheelEncoderStamped
 from duckietown_msgs.msg import AprilTagDetection
 
 class Autopilot:
@@ -22,7 +22,7 @@ class Autopilot:
 
         # Initialize Subscriber
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
-        
+        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
         # Spin to keep the script running and handle callbacks
         rospy.spin() 
 
