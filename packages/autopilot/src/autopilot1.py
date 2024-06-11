@@ -16,10 +16,10 @@ class Autopilot:
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
         
-        ###### Init Pub/Subs. REMEMBER TO REPLACE "akandb" WITH YOUR ROBOT'S NAME #####
-        self.cmd_vel_pub = rospy.Publisher('/akandb/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
-        self.state_pub = rospy.Publisher('/akandb/fsm_node/mode', FSMState, queue_size=1)
-        rospy.Subscriber('/akandb/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
+        ###### Init Pub/Subs. REMEMBER TO REPLACE "oryx" WITH YOUR ROBOT'S NAME #####
+        self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
+        self.state_pub = rospy.Publisher('/oryx/fsm_node/mode', FSMState, queue_size=1)
+        rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         ################################################################
 
         rospy.spin() # Spin forever but listen to message callbacks
@@ -29,15 +29,17 @@ class Autopilot:
         if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag:
             return
         
+        rospy.loginfo("AprilTag detections received.")
         self.move_robot(msg.detections)
  
-    # Stop Robot before node has shut down. This ensures the robot keep moving with the latest velocity command
+    # Stop Robot before node has shut down. This ensures the robot does not keep moving with the latest velocity command
     def clean_shutdown(self):
         rospy.loginfo("System shutting down. Stopping robot...")
         self.stop_robot()
 
     # Sends zero velocity to stop the robot
     def stop_robot(self):
+        rospy.loginfo("Sending stop command to robot.")
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0.0
@@ -45,6 +47,7 @@ class Autopilot:
         self.cmd_vel_pub.publish(cmd_msg)
 
     def set_state(self, state):
+        rospy.loginfo(f"Setting state to {state}.")
         self.robot_state = state
         state_msg = FSMState()
         state_msg.header.stamp = rospy.Time.now()
@@ -53,10 +56,12 @@ class Autopilot:
 
     def move_robot(self, detections):
         if len(detections) == 0:
+            rospy.loginfo("No AprilTags detected.")
             return
         
         # Process AprilTag info and publish a velocity
         for detection in detections:
+            rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
             if detection.tag_id == 32:  # Assuming tag ID 32 is the stop sign
                 rospy.loginfo("Stop sign detected. Stopping the robot...")
                 
