@@ -12,6 +12,7 @@ class Autopilot:
 
         self.robot_state = "LANE_FOLLOWING"
         self.ignore_apriltag = False
+        self.stop_sign_distance_threshold = 0.2  # Set your desired threshold distance here (in meters)
 
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
@@ -63,36 +64,39 @@ class Autopilot:
         for detection in detections:
             rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
             if detection.tag_id == 32:  # Assuming tag ID 32 is the stop sign
-                rospy.loginfo("Stop sign detected. Stopping the robot...")
-                
-                # Change state to stop lane following
-                self.set_state("NORMAL_JOYSTICK_CONTROL")
-                
-                # Stop the robot
-                self.stop_robot()
-                rospy.sleep(3)  # Stop for 3 seconds
+                distance_to_tag = detection.transform.translation.z
+                rospy.loginfo(f"Distance to AprilTag (ID 32): {distance_to_tag} meters")
+                if distance_to_tag <= self.stop_sign_distance_threshold:
+                    rospy.loginfo("Stop sign within threshold distance. Stopping the robot...")
+                    
+                    # Change state to stop lane following
+                    self.set_state("NORMAL_JOYSTICK_CONTROL")
+                    
+                    # Stop the robot
+                    self.stop_robot()
+                    rospy.sleep(3)  # Stop for 3 seconds
 
-                # Move forward to clear the stop sign
-                cmd_msg = Twist2DStamped()
-                cmd_msg.header.stamp = rospy.Time.now()
-                cmd_msg.v = 0.5  # Move forward with velocity 0.5
-                cmd_msg.omega = 0.0
-                self.cmd_vel_pub.publish(cmd_msg)
-                rospy.sleep(2)  # Move forward for 2 seconds
+                    # Move forward to clear the stop sign
+                    cmd_msg = Twist2DStamped()
+                    cmd_msg.header.stamp = rospy.Time.now()
+                    cmd_msg.v = 0.5  # Move forward with velocity 0.5
+                    cmd_msg.omega = 0.0
+                    self.cmd_vel_pub.publish(cmd_msg)
+                    rospy.sleep(2)  # Move forward for 2 seconds
 
-                # Stop the robot again
-                self.stop_robot()
+                    # Stop the robot again
+                    self.stop_robot()
 
-                # Ignore AprilTag messages for 5 seconds to avoid immediate re-triggering
-                self.ignore_apriltag = True
-                rospy.sleep(5)
-                self.ignore_apriltag = False
+                    # Ignore AprilTag messages for 5 seconds to avoid immediate re-triggering
+                    self.ignore_apriltag = True
+                    rospy.sleep(5)
+                    self.ignore_apriltag = False
 
-                # Resume lane following
-                self.set_state("LANE_FOLLOWING")
-                rospy.loginfo("Resuming lane following...")
+                    # Resume lane following
+                    self.set_state("LANE_FOLLOWING")
+                    rospy.loginfo("Resuming lane following...")
 
-                return
+                    return
 
 if __name__ == '__main__':
     try:
