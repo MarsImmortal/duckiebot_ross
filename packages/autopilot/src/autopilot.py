@@ -63,7 +63,7 @@ class Autopilot:
 
         # Loop through detected AprilTags
         for detection in detections:
-            if detection.id == 1:  # Assuming tag ID 1 is the stop sign
+            if detection.id == 32:  # Assuming tag ID 1 is the stop sign
                 rospy.loginfo("Stop sign detected. Stopping the robot...")
                 
                 # Change state to stop lane following
