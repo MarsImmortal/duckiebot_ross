@@ -97,6 +97,9 @@ class Autopilot:
     def range_callback(self, msg):
         if self.robot_state != "LANE_FOLLOWING":
             return
+        # Ignore false readings
+        if msg.range < 0.25 or (7 <= msg.range <= 9):
+            return
 
         # Check if the distance is within the desired range for object detection
         if self.object_detection_min <= msg.range <= self.object_detection_max:
