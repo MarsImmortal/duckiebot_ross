@@ -7,6 +7,7 @@ class Drive_Square:
         # Initialize global class variables
         self.cmd_msg = Twist2DStamped()
         self.ticks_per_meter = 561  # Ticks per meter (experimental value)
+        self.ticks_per_90_degrees = 100  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
         self.obstacle_detected = False  # Flag for obstacle detection
 
