@@ -14,6 +14,9 @@ class Autopilot:
         self.object_detection_min = 0.3  # Minimum distance threshold for object detection
         self.object_detection_max = 0.5  # Maximum distance threshold for object detection
 
+        # Initialize control variables
+        self.prev_distance = None
+
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
         
@@ -103,14 +106,20 @@ class Autopilot:
             # Object detected in front, stop the robot
             self.stop_robot()
 
-            # Implement logic for Car Following or Overtaking feature here
-            # For example, you can adjust the robot's behavior based on the detected distance
-            
-            # Implement closed-loop movement here if necessary
-            pass
+            # Implement closed-loop movement based on distance readings
+            if self.prev_distance is not None:
+                # Compute control action based on the change in distance
+                distance_change = msg.range - self.prev_distance
+                # Adjust robot's behavior based on distance change (implement your control logic here)
+                # Example: Adjust velocity or steering angle based on the distance change
+                
+            # Update previous distance for the next iteration
+            self.prev_distance = msg.range
         else:
             # No obstacle detected within the specified range, resume lane following
             self.set_state("LANE_FOLLOWING")
+            # Reset previous distance since the obstacle is no longer detected
+            self.prev_distance = None
 
 if __name__ == '__main__':
     try:
