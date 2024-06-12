@@ -72,14 +72,14 @@ class Autopilot:
         # Process AprilTag info and publish a velocity
         for detection in detections:
             rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
-            if detection.tag_id == 57:  # Assuming tag ID 52 is the intersection sign
+            if detection.tag_id == 57:  # Assuming tag ID 57 is the intersection sign
                 distance_to_tag = detection.transform.translation.z
                 rospy.loginfo(f"Distance to AprilTag (ID 57): {distance_to_tag} meters")
                 if distance_to_tag <= self.stop_sign_distance_threshold:
                     rospy.loginfo("Intersection sign within threshold distance. Executing custom maneuver...")
 
                     # Change state to custom maneuver
-                    self.set_state("NORMAL_JOYSTICK_CONTROL")
+                    self.set_state("CUSTOM_MANEUVER")
 
                     # Move forward 197 ticks
                     self.move_forward(197)
@@ -120,10 +120,11 @@ class Autopilot:
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0.0
-        cmd_msg.omega = 3  # Rotate with omega 2.5
+        cmd_msg.omega = 3  # Rotate with omega 3
 
         while self.current_encoder_ticks < target_ticks:
             self.cmd_vel_pub.publish(cmd_msg)
+            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
 
         self.stop_robot()
 
