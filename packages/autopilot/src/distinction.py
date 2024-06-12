@@ -85,7 +85,7 @@ class Autopilot:
                     self.move_forward(197)
 
                     # Rotate by 325 ticks
-                    self.rotate(325)
+                    self.rotate(-325)
 
                     # Move forward 622 ticks
                     self.move_forward(622)
@@ -120,7 +120,7 @@ class Autopilot:
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0.0
-        cmd_msg.omega = 2.5  # Rotate with omega 2.5
+        cmd_msg.omega = 3  # Rotate with omega 2.5
 
         while self.current_encoder_ticks < target_ticks:
             self.cmd_vel_pub.publish(cmd_msg)
