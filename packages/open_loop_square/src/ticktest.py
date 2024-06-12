@@ -76,25 +76,16 @@ class Drive_Square:
             self.rotate_in_place(90)  # Rotate 90 degrees
 
     def rotate_in_place(self, degrees):
-        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_meter)
+        target_ticks = self.current_ticks + int(degrees / 90 * self.ticks_per_90_degrees)
 
         self.cmd_msg.header.stamp = rospy.Time.now()
         self.cmd_msg.v = 0.0
-        self.cmd_msg.omega = 6  # Angular velocity for a 90-degree turn (adjust as needed)
+        self.cmd_msg.omega = 3  # Angular velocity for a 90-degree turn (adjust as needed)
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
-        rate = rospy.Rate(5)  # 5 Hz
-        while self.current_ticks < target_ticks:
-            if self.obstacle_detected:
-                rospy.loginfo("Obstacle detected: Waiting to clear...")
-                rate.sleep()
-                continue
-
-            self.cmd_msg.header.stamp = rospy.Time.now()
-            self.cmd_msg.v = 0.0
-            self.cmd_msg.omega = 6
-            self.pub.publish(self.cmd_msg)
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown() and self.current_ticks < target_ticks:
             rate.sleep()
 
         self.stop_robot()
