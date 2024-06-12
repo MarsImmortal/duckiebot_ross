@@ -36,11 +36,14 @@ class Drive_Square:
     def range_callback(self, msg):
         obstacle_threshold = 0.3  # Adjust threshold as needed (in meters)
         if msg.range < obstacle_threshold:
-            self.obstacle_detected = True
-            rospy.loginfo("Obstacle Detected: Stopping...")
-            self.stop_robot()
+            if not self.obstacle_detected:
+                self.obstacle_detected = True
+                rospy.loginfo("Obstacle Detected: Stopping...")
+                self.stop_robot()
         else:
-            self.obstacle_detected = False
+            if self.obstacle_detected:
+                self.obstacle_detected = False
+                rospy.loginfo("Obstacle Cleared: Resuming...")
 
     def move_straight(self, distance):
         target_ticks = self.current_ticks + int(distance * self.ticks_per_meter)
@@ -51,13 +54,17 @@ class Drive_Square:
         self.pub.publish(self.cmd_msg)
         rospy.loginfo(f"Moving Forward by {distance} meters...")
 
-        rate = rospy.Rate(5)  # 10 Hz
-        while not self.current_ticks < target_ticks:
-            while self.obstacle_detected:
-                rospy.loginfo("rotating")
-                self.rotate_in_place(90)
-                if self.obstacle_detected == False:
-                    self.move_straight(distance)
+        rate = rospy.Rate(5)  # 5 Hz
+        while self.current_ticks < target_ticks:
+            if self.obstacle_detected:
+                rospy.loginfo("Obstacle detected: Waiting to clear...")
+                rate.sleep()
+                continue
+
+            self.cmd_msg.header.stamp = rospy.Time.now()
+            self.cmd_msg.v = 0.3
+            self.cmd_msg.omega = 0.0
+            self.pub.publish(self.cmd_msg)
             rate.sleep()
 
         self.stop_robot()
@@ -77,7 +84,16 @@ class Drive_Square:
         rospy.loginfo(f"Rotating in place by {degrees} degrees...")
 
         rate = rospy.Rate(5)  # 5 Hz
-        while not self.current_ticks < target_ticks:
+        while self.current_ticks < target_ticks:
+            if self.obstacle_detected:
+                rospy.loginfo("Obstacle detected: Waiting to clear...")
+                rate.sleep()
+                continue
+
+            self.cmd_msg.header.stamp = rospy.Time.now()
+            self.cmd_msg.v = 0.0
+            self.cmd_msg.omega = 6
+            self.pub.publish(self.cmd_msg)
             rate.sleep()
 
         self.stop_robot()
