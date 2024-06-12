@@ -126,7 +126,7 @@ class Autopilot:
                     cmd_msg.v = 0.0
                     cmd_msg.omega = 1.0  # Angular velocity for left turn
                     self.cmd_vel_pub.publish(cmd_msg)
-                    rospy.sleep(1)  # Move left for 1 second
+                    rospy.sleep(2)  # Move left for 1 second
 
                 # Move right for 1 second
                 if distance_change > 0:
@@ -135,7 +135,7 @@ class Autopilot:
                     cmd_msg.v = 0.0
                     cmd_msg.omega = -1.0  # Angular velocity for right turn
                     self.cmd_vel_pub.publish(cmd_msg)
-                    rospy.sleep(1)  # Move right for 1 second
+                    rospy.sleep(2)  # Move right for 1 second
 
                 # Move forward for 1 meter
                 cmd_msg = Twist2DStamped()
