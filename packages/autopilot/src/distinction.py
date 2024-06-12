@@ -97,21 +97,20 @@ class Autopilot:
     def range_callback(self, msg):
         if self.robot_state != "LANE_FOLLOWING":
             return
-        # Ignore false readings
-        if msg.range < 0.25 or (7 <= msg.range <= 9):
-            return
-
+        
         # Check if the distance is within the desired range for object detection
         if self.object_detection_min <= msg.range <= self.object_detection_max:
             # Object detected in front, stop the robot
-            if self.robot_state != "STOPPED":
-                self.stop_robot()
-                self.set_state("STOPPED")  # Set robot state to STOPPED
+            self.stop_robot()
+
+            # Implement logic for Car Following or Overtaking feature here
+            # For example, you can adjust the robot's behavior based on the detected distance
+            
+            # Implement closed-loop movement here if necessary
+            pass
         else:
-            # No obstacle detected within the specified range
-            if self.robot_state == "STOPPED":
-                # If robot was previously stopped, resume lane following
-                self.set_state("LANE_FOLLOWING")
+            # No obstacle detected within the specified range, resume lane following
+            self.set_state("LANE_FOLLOWING")
 
 if __name__ == '__main__':
     try:
