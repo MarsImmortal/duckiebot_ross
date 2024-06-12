@@ -20,8 +20,8 @@ class TargetFollower:
         # Define control parameters
         self.max_omega = math.radians(4.0)  # Maximum angular velocity in radians
         self.min_omega = math.radians(2.0)  # Minimum angular velocity in radians
-        self.deadband = 0.1  # Deadband around zero angular velocity
-        self.high_friction_factor = 2  # Factor to increase omega for high ground friction
+        self.deadband = 0.5 # Deadband around zero angular velocity
+        self.high_friction_factor = 3  # Factor to increase omega for high ground friction
         self.tag_visible = False  # Flag to indicate if AprilTag is visible
 
         # Start spinning until AprilTag is detected
