@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 import rospy
-from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray
+from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray, WheelEncoderStamped
 from sensor_msgs.msg import Range  # Import Range message for ToF sensor
 
 class Autopilot:
@@ -16,7 +14,7 @@ class Autopilot:
 
         # Initialize control variables
         self.prev_distance = None
-        self.prev_velocity = 0.0
+        self.prev_ticks = None
 
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
@@ -26,6 +24,7 @@ class Autopilot:
         self.state_pub = rospy.Publisher('/oryx/fsm_node/mode', FSMState, queue_size=1)
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         rospy.Subscriber('/oryx/front_center_tof_driver_node/range', Range, self.range_callback, queue_size=1)
+        rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
 
         rospy.spin()  # Spin forever but listen to message callbacks
 
@@ -120,6 +119,32 @@ class Autopilot:
                 self.cmd_vel_pub.publish(cmd_msg)
                 self.prev_velocity = cmd_msg.v  # Update previous velocity
                 
+                # Move left for 1 second
+                if distance_change < 0:
+                    cmd_msg = Twist2DStamped()
+                    cmd_msg.header.stamp = rospy.Time.now()
+                    cmd_msg.v = 0.0
+                    cmd_msg.omega = 1.0  # Angular velocity for left turn
+                    self.cmd_vel_pub.publish(cmd_msg)
+                    rospy.sleep(1)  # Move left for 1 second
+
+                # Move right for 1 second
+                if distance_change > 0:
+                    cmd_msg = Twist2DStamped()
+                    cmd_msg.header.stamp = rospy.Time.now()
+                    cmd_msg.v = 0.0
+                    cmd_msg.omega = -1.0  # Angular velocity for right turn
+                    self.cmd_vel_pub.publish(cmd_msg)
+                    rospy.sleep(1)  # Move right for 1 second
+
+                # Move forward for 1 meter
+                cmd_msg = Twist2DStamped()
+                cmd_msg.header.stamp = rospy.Time.now()
+                cmd_msg.v = 0.5  # Forward velocity
+                cmd_msg.omega = 0.0
+                self.cmd_vel_pub.publish(cmd_msg)
+                rospy.sleep(2)  # Move forward for 2 seconds
+
             # Update previous distance for the next iteration
             self.prev_distance = msg.range
         else:
@@ -128,6 +153,21 @@ class Autopilot:
             # Reset previous distance and velocity since the obstacle is no longer detected
             self.prev_distance = None
             self.prev_velocity = 0.0
+
+    def encoder_callback(self, msg):
+        if self.robot_state != "LANE_FOLLOWING":
+            return
+
+        # Update previous ticks for calculating distance traveled
+        if self.prev_ticks is not None:
+            ticks_change = msg.data - self.prev_ticks
+            # Assuming each tick corresponds to 0.01 meters traveled
+            distance_change = ticks_change * 0.01
+            # Update previous distance
+            self.prev_distance += distance_change
+
+        # Update previous ticks for the next iteration
+        self.prev_ticks = msg.data
 
 if __name__ == '__main__':
     try:
