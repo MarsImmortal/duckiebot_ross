@@ -83,9 +83,11 @@ class Autopilot:
 
                     # Move forward 197 ticks
                     self.move_forward(197)
+                    rospy.sleep(1)  # Sleep for 1 second between maneuvers
 
                     # Rotate by 325 ticks
                     self.rotate(-325)
+                    rospy.sleep(1)  # Sleep for 1 second between maneuvers
 
                     # Move forward 622 ticks
                     self.move_forward(622)
@@ -108,7 +110,6 @@ class Autopilot:
 
         while self.current_encoder_ticks < target_ticks:
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
 
         self.stop_robot()
 
@@ -124,7 +125,6 @@ class Autopilot:
 
         while self.current_encoder_ticks < target_ticks:
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
 
         self.stop_robot()
 
