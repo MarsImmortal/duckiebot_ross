@@ -13,7 +13,7 @@ class Autopilot:
 
         self.robot_state = "LANE_FOLLOWING"
         self.ignore_apriltag = False
-        self.stop_sign_distance_threshold = 0.2  # Set your desired threshold distance here (in meters)
+        self.stop_sign_distance_threshold = 0.25  # Set your desired threshold distance here (in meters)
         self.encoder_ticks_per_meter = 1350  # Adjust according to your robot's specifications
         self.current_encoder_ticks = 0
         self.target_encoder_ticks = 0
@@ -74,7 +74,7 @@ class Autopilot:
             rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
             if detection.tag_id == 57:  # Assuming tag ID 52 is the intersection sign
                 distance_to_tag = detection.transform.translation.z
-                rospy.loginfo(f"Distance to AprilTag (ID 52): {distance_to_tag} meters")
+                rospy.loginfo(f"Distance to AprilTag (ID 57): {distance_to_tag} meters")
                 if distance_to_tag <= self.stop_sign_distance_threshold:
                     rospy.loginfo("Intersection sign within threshold distance. Executing custom maneuver...")
 
@@ -124,7 +124,6 @@ class Autopilot:
 
         while self.current_encoder_ticks < target_ticks:
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
 
         self.stop_robot()
 
