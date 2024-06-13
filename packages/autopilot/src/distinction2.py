@@ -20,6 +20,7 @@ class Autopilot:
         self.start_ticks = 0  # Variable to track starting tick count
         self.obstacle_detected = False
         self.handling_obstacle = False  # Flag to indicate obstacle handling
+        self.is_shutdown = False  # Flag to check if the node is shutting down
 
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
@@ -43,15 +44,17 @@ class Autopilot:
  
     # Stop Robot before node has shut down. This ensures the robot does not keep moving with the latest velocity command
     def clean_shutdown(self):
+        self.is_shutdown = True
         self.stop_robot()
 
     # Sends zero velocity to stop the robot
     def stop_robot(self):
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0.0
-        cmd_msg.omega = 0.0
-        self.cmd_vel_pub.publish(cmd_msg)
+        if not self.is_shutdown:
+            cmd_msg = Twist2DStamped()
+            cmd_msg.header.stamp = rospy.Time.now()
+            cmd_msg.v = 0.0
+            cmd_msg.omega = 0.0
+            self.cmd_vel_pub.publish(cmd_msg)
 
     def set_state(self, state):
         self.robot_state = state
@@ -120,6 +123,8 @@ class Autopilot:
         # Perform right 90-degree turn
         self.turn_right()
         
+        # Move forward for 40 ticks
+        self.move_forward_ticks(40)
         
         # Resume lane following
         self.handling_obstacle = False  # Reset flag after handling obstacle
@@ -129,6 +134,8 @@ class Autopilot:
         self.start_ticks = self.current_ticks  # Set starting ticks
         target_ticks = self.start_ticks + self.ticks_per_90_degrees
         while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.0
@@ -141,6 +148,8 @@ class Autopilot:
         self.start_ticks = self.current_ticks  # Set starting ticks
         target_ticks = self.start_ticks + self.ticks_per_90_degrees
         while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.0
@@ -153,6 +162,8 @@ class Autopilot:
         self.start_ticks = self.current_ticks  # Set starting ticks
         target_ticks = self.start_ticks + ticks
         while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.3
