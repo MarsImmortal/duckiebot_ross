@@ -12,8 +12,8 @@ class Autopilot:
         self.robot_state = "LANE_FOLLOWING"
         self.ignore_apriltag = False
         self.stop_sign_distance_threshold = 0.2  # Set your desired threshold distance here (in meters)
-        self.object_detection_min = 0.2  # Minimum distance threshold for object detection
-        self.object_detection_max = 0.3  # Maximum distance threshold for object detection
+        self.object_detection_min = 0.15  # Minimum distance threshold for object detection
+        self.object_detection_max = 0.2  # Maximum distance threshold for object detection
 
         self.ticks_per_90_degrees = 35  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
@@ -92,13 +92,16 @@ class Autopilot:
 
                     # Ignore AprilTag messages for 5 seconds to avoid immediate re-triggering
                     self.ignore_apriltag = True
-                    rospy.sleep(5)
-                    self.ignore_apriltag = False
+                    ignore_timer = rospy.Timer(rospy.Duration(5), self.reset_ignore_apriltag, oneshot=True)
 
                     # Resume lane following
                     self.set_state("LANE_FOLLOWING")
 
                     return
+
+    def reset_ignore_apriltag(self, event):
+        self.ignore_apriltag = False
+
 
     def range_callback(self, msg):
         if self.robot_state != "LANE_FOLLOWING" or self.handling_obstacle:
@@ -116,13 +119,9 @@ class Autopilot:
     def avoid_obstacle(self):
         # Perform left 90-degree turn
         self.turn_left()
-        rospy.sleep(2)
-        # Move forward for 70 ticks
-        self.move_forward_ticks(40)
-        rospy.sleep(2)
-        # Perform right 90-degree turn
-        self.turn_right()
-        rospy.sleep(2)
+        # Move forward for 60 ticks
+        self.move_forward_ticks(70)
+
         # Resume lane following
         self.handling_obstacle = False  # Reset flag after handling obstacle
         self.set_state("LANE_FOLLOWING")
