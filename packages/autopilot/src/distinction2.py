@@ -15,7 +15,7 @@ class Autopilot:
         self.object_detection_min = 0.2  # Minimum distance threshold for object detection
         self.object_detection_max = 0.3  # Maximum distance threshold for object detection
 
-        self.ticks_per_90_degrees = 70  # Ticks per 90-degree turn (experimental value)
+        self.ticks_per_90_degrees = 35  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
         self.start_ticks = 0  # Variable to track starting tick count
         self.obstacle_detected = False
@@ -116,13 +116,13 @@ class Autopilot:
     def avoid_obstacle(self):
         # Perform left 90-degree turn
         self.turn_left()
-
+        rospy.sleep(2)
         # Move forward for 70 ticks
         self.move_forward_ticks(40)
-
+        rospy.sleep(2)
         # Perform right 90-degree turn
         self.turn_right()
-        
+        rospy.sleep(2)
         # Resume lane following
         self.handling_obstacle = False  # Reset flag after handling obstacle
         self.set_state("LANE_FOLLOWING")
