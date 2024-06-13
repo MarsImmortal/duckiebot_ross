@@ -118,7 +118,7 @@ class Autopilot:
 
     def avoid_obstacle(self):
         # Perform left 90-degree turn
-        self.turn_left()
+        self.turn_right()
         # Move forward for 60 ticks
         self.move_forward_ticks(70)
 
