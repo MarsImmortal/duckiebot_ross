@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import rospy
-from duckietown_msgs.msg import Twist2DStamped
-from duckietown_msgs.msg import FSMState
-from duckietown_msgs.msg import AprilTagDetectionArray
-from duckietown_msgs.msg import WheelEncoderStamped
+from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray, WheelEncoderStamped
+from sensor_msgs.msg import Range  # Import Range message for obstacle detection
 
 class Autopilot:
     def __init__(self):
@@ -14,9 +12,15 @@ class Autopilot:
         self.robot_state = "LANE_FOLLOWING"
         self.ignore_apriltag = False
         self.stop_sign_distance_threshold = 0.2  # Set your desired threshold distance here (in meters)
-        self.encoder_ticks_per_meter = 1350  # Adjust according to your robot's specifications
-        self.current_encoder_ticks = 0
-        self.target_encoder_ticks = 0
+        self.object_detection_min = 0.15  # Minimum distance threshold for object detection
+        self.object_detection_max = 0.2  # Maximum distance threshold for object detection
+
+        self.ticks_per_90_degrees = 35  # Ticks per 90-degree turn (experimental value)
+        self.current_ticks = 0
+        self.start_ticks = 0  # Variable to track starting tick count
+        self.obstacle_detected = False
+        self.handling_obstacle = False  # Flag to indicate obstacle handling
+        self.is_shutdown = False  # Flag to check if the node is shutting down
 
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
@@ -26,38 +30,33 @@ class Autopilot:
         self.state_pub = rospy.Publisher('/oryx/fsm_node/mode', FSMState, queue_size=1)
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
+        rospy.Subscriber('/oryx/front_center_tof_driver_node/range', Range, self.range_callback, queue_size=1)  # Subscribe to ToF sensor
         ################################################################
 
-        rospy.spin() # Spin forever but listen to message callbacks
+        rospy.spin()  # Spin forever but listen to message callbacks
 
     # Apriltag Detection Callback
     def tag_callback(self, msg):
-        if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag:
+        if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag or self.handling_obstacle:
             return
         
-        rospy.loginfo("AprilTag detections received.")
         self.move_robot(msg.detections)
  
-    # Encoder callback to update current encoder ticks
-    def encoder_callback(self, msg):
-        self.current_encoder_ticks = msg.data
-
     # Stop Robot before node has shut down. This ensures the robot does not keep moving with the latest velocity command
     def clean_shutdown(self):
-        rospy.loginfo("System shutting down. Stopping robot...")
+        self.is_shutdown = True
         self.stop_robot()
 
     # Sends zero velocity to stop the robot
     def stop_robot(self):
-        rospy.loginfo("Sending stop command to robot.")
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0.0
-        cmd_msg.omega = 0.0
-        self.cmd_vel_pub.publish(cmd_msg)
+        if not self.is_shutdown:
+            cmd_msg = Twist2DStamped()
+            cmd_msg.header.stamp = rospy.Time.now()
+            cmd_msg.v = 0.0
+            cmd_msg.omega = 0.0
+            self.cmd_vel_pub.publish(cmd_msg)
 
     def set_state(self, state):
-        rospy.loginfo(f"Setting state to {state}.")
         self.robot_state = state
         state_msg = FSMState()
         state_msg.header.stamp = rospy.Time.now()
@@ -66,62 +65,113 @@ class Autopilot:
 
     def move_robot(self, detections):
         if len(detections) == 0:
-            rospy.loginfo("No AprilTags detected.")
             return
         
         # Process AprilTag info and publish a velocity
         for detection in detections:
-            rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
-            if detection.tag_id == 11:  # Assuming tag ID 52 is the intersection sign
+            if detection.tag_id == 31:  # Assuming tag ID 31 is the stop sign
                 distance_to_tag = detection.transform.translation.z
-                rospy.loginfo(f"Distance to AprilTag (ID 11): {distance_to_tag} meters")
                 if distance_to_tag <= self.stop_sign_distance_threshold:
-                    rospy.loginfo("Intersection sign within threshold distance. Executing custom maneuver...")
-
-                    # Change state to custom maneuver
+                    # Change state to stop lane following
                     self.set_state("NORMAL_JOYSTICK_CONTROL")
+                    
+                    # Stop the robot
                     self.stop_robot()
-                    self.move_forward(50)
-                    # Rotate by 325 ticks
-                    self.rotate(325)
+                    rospy.sleep(3)  # Stop for 3 seconds
+
+                    # Move forward to clear the stop sign
+                    cmd_msg = Twist2DStamped()
+                    cmd_msg.header.stamp = rospy.Time.now()
+                    cmd_msg.v = 0.5  # Move forward with velocity 0.5
+                    cmd_msg.omega = 0.0
+                    self.cmd_vel_pub.publish(cmd_msg)
+                    rospy.sleep(2)  # Move forward for 2 seconds
+
+                    # Stop the robot again
+                    self.stop_robot()
+
+                    # Ignore AprilTag messages for 5 seconds to avoid immediate re-triggering
+                    self.ignore_apriltag = True
+                    ignore_timer = rospy.Timer(rospy.Duration(5), self.reset_ignore_apriltag, oneshot=True)
 
                     # Resume lane following
                     self.set_state("LANE_FOLLOWING")
-                    rospy.loginfo("Resuming lane following...")
 
                     return
 
-    def move_forward(self, ticks):
-        rospy.loginfo(f"Moving forward {ticks} encoder ticks.")
-        initial_ticks = self.current_encoder_ticks
-        target_ticks = initial_ticks + ticks
+    def reset_ignore_apriltag(self, event):
+        self.ignore_apriltag = False
 
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 1  # Move forward with velocity 0.5
-        cmd_msg.omega = 0.0
 
-        while self.current_encoder_ticks < target_ticks:
+    def range_callback(self, msg):
+        if self.robot_state != "LANE_FOLLOWING" or self.handling_obstacle:
+            return
+
+        # Check if the distance is within the desired range for object detection
+        if self.object_detection_min <= msg.range <= self.object_detection_max:
+            self.obstacle_detected = True
+            self.handling_obstacle = True  # Set flag to indicate obstacle handling
+            self.set_state("CUSTOM_MANEUVER")
+            self.avoid_obstacle()
+        else:
+            self.obstacle_detected = False
+
+    def avoid_obstacle(self):
+        # Perform left 90-degree turn
+        self.turn_right()
+        # Move forward for 60 ticks
+        self.move_forward_ticks(70)
+
+        # Resume lane following
+        self.handling_obstacle = False  # Reset flag after handling obstacle
+        self.set_state("LANE_FOLLOWING")
+
+    def turn_left(self):
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + self.ticks_per_90_degrees
+        while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
+            cmd_msg = Twist2DStamped()
+            cmd_msg.header.stamp = rospy.Time.now()
+            cmd_msg.v = 0.0
+            cmd_msg.omega = 3.0
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
+        self.stop_robot()  # Ensure the robot stops after turning
 
-        self.stop_robot()
-
-    def rotate(self, ticks):
-        rospy.loginfo(f"Rotating {ticks} encoder ticks.")
-        initial_ticks = self.current_encoder_ticks
-        target_ticks = initial_ticks + ticks
-
-        cmd_msg = Twist2DStamped()
-        cmd_msg.header.stamp = rospy.Time.now()
-        cmd_msg.v = 0.0
-        cmd_msg.omega = 2.5  # Rotate with omega 2.5
-
-        while self.current_encoder_ticks < target_ticks:
+    def turn_right(self):
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + self.ticks_per_90_degrees
+        while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
+            cmd_msg = Twist2DStamped()
+            cmd_msg.header.stamp = rospy.Time.now()
+            cmd_msg.v = 0.0
+            cmd_msg.omega = -3.0
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.01)  # Small sleep to prevent high CPU usage
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
+        self.stop_robot()  # Ensure the robot stops after turning
 
-        self.stop_robot()
+    def move_forward_ticks(self, ticks):
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + ticks
+        while self.current_ticks < target_ticks:
+            if self.is_shutdown:
+                return
+            cmd_msg = Twist2DStamped()
+            cmd_msg.header.stamp = rospy.Time.now()
+            cmd_msg.v = 0.3
+            cmd_msg.omega = 0.0
+            self.cmd_vel_pub.publish(cmd_msg)
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
+        self.stop_robot()  # Ensure the robot stops after moving forward
+
+    # Wheel Encoder Callback
+    def encoder_callback(self, msg):
+        # Update the current ticks
+        self.current_ticks = msg.data
 
 if __name__ == '__main__':
     try:
