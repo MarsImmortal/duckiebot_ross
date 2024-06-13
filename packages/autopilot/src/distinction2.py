@@ -17,7 +17,9 @@ class Autopilot:
 
         self.ticks_per_90_degrees = 100  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
+        self.start_ticks = 0  # New variable to track starting tick count
         self.obstacle_detected = False
+        self.handling_obstacle = False  # Flag to indicate obstacle handling
 
         # When shutdown signal is received, we run clean_shutdown function
         rospy.on_shutdown(self.clean_shutdown)
@@ -34,7 +36,7 @@ class Autopilot:
 
     # Apriltag Detection Callback
     def tag_callback(self, msg):
-        if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag:
+        if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag or self.handling_obstacle:
             return
         
         rospy.loginfo("AprilTag detections received.")
@@ -70,7 +72,7 @@ class Autopilot:
         # Process AprilTag info and publish a velocity
         for detection in detections:
             rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
-            if detection.tag_id == 31:  # Assuming tag ID 32 is the stop sign
+            if detection.tag_id == 31:  # Assuming tag ID 31 is the stop sign
                 distance_to_tag = detection.transform.translation.z
                 rospy.loginfo(f"Distance to AprilTag (ID 31): {distance_to_tag} meters")
                 if distance_to_tag <= self.stop_sign_distance_threshold:
@@ -106,13 +108,14 @@ class Autopilot:
                     return
 
     def range_callback(self, msg):
-        if self.robot_state != "LANE_FOLLOWING":
+        if self.robot_state != "LANE_FOLLOWING" or self.handling_obstacle:
             return
 
         # Check if the distance is within the desired range for object detection
         if self.object_detection_min <= msg.range <= self.object_detection_max:
             rospy.loginfo(f"Obstacle detected at {msg.range} meters. Initiating avoidance maneuver...")
             self.obstacle_detected = True
+            self.handling_obstacle = True  # Set flag to indicate obstacle handling
             self.set_state("CUSTOM_MANEUVER")
             self.avoid_obstacle()
         else:
@@ -135,43 +138,44 @@ class Autopilot:
 
         # Resume lane following
         rospy.loginfo("Resuming lane following...")
+        self.handling_obstacle = False  # Reset flag after handling obstacle
         self.set_state("LANE_FOLLOWING")
 
     def turn_left(self):
-        target_ticks = self.current_ticks + self.ticks_per_90_degrees
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + self.ticks_per_90_degrees
         while self.current_ticks < target_ticks:
-
-
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.0
             cmd_msg.omega = 3.0
             self.cmd_vel_pub.publish(cmd_msg)
             rospy.sleep(0.1)
+        self.stop_robot()  # Ensure the robot stops after turning
 
     def turn_right(self):
-        target_ticks = self.current_ticks + self.ticks_per_90_degrees
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + self.ticks_per_90_degrees
         while self.current_ticks < target_ticks:
-
-
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.0
             cmd_msg.omega = -3.0
             self.cmd_vel_pub.publish(cmd_msg)
             rospy.sleep(0.1)
+        self.stop_robot()  # Ensure the robot stops after turning
 
     def move_forward_ticks(self, ticks):
-        target_ticks = self.current_ticks + ticks
+        self.start_ticks = self.current_ticks  # Set starting ticks
+        target_ticks = self.start_ticks + ticks
         while self.current_ticks < target_ticks:
-
-
             cmd_msg = Twist2DStamped()
             cmd_msg.header.stamp = rospy.Time.now()
             cmd_msg.v = 0.3
             cmd_msg.omega = 0.0
             self.cmd_vel_pub.publish(cmd_msg)
             rospy.sleep(0.1)
+        self.stop_robot()  # Ensure the robot stops after moving forward
 
     # Wheel Encoder Callback
     def encoder_callback(self, msg):
