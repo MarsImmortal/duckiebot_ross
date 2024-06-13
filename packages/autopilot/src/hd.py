@@ -98,10 +98,29 @@ class Autopilot:
                     self.set_state("LANE_FOLLOWING")
 
                     return
+            
+            if detection.tag_id == 65:  # Assuming tag ID 65 is for the intersection
+                # Change state to stop lane following
+                self.set_state("NORMAL_JOYSTICK_CONTROL")
+                
+                # Stop the robot
+                self.stop_robot()
+                rospy.sleep(1)  # Stop for 1 second
+
+                # Perform a left 90-degree turn
+                self.turn_left()
+
+                # Ignore AprilTag messages for 5 seconds to avoid immediate re-triggering
+                self.ignore_apriltag = True
+                ignore_timer = rospy.Timer(rospy.Duration(5), self.reset_ignore_apriltag, oneshot=True)
+
+                # Resume lane following
+                self.set_state("LANE_FOLLOWING")
+
+                return
 
     def reset_ignore_apriltag(self, event):
         self.ignore_apriltag = False
-
 
     def range_callback(self, msg):
         if self.robot_state != "LANE_FOLLOWING" or self.handling_obstacle:
