@@ -17,12 +17,12 @@ class TargetFollower:
         self.cmd_vel_pub = rospy.Publisher('/oryx/car_cmd_switch_node/cmd', Twist2DStamped, queue_size=1)
         rospy.Subscriber('/oryx/apriltag_detector_node/detections', AprilTagDetectionArray, self.tag_callback, queue_size=1)
         
-        # # Define control parameters
-        # self.max_omega = math.radians(4.0)  # Maximum angular velocity in radians
-        # self.min_omega = math.radians(2.0)  # Minimum angular velocity in radians
-        # self.deadband = 0.5 # Deadband around zero angular velocity
-        # self.high_friction_factor = 3  # Factor to increase omega for high ground friction
-        # self.tag_visible = False  # Flag to indicate if AprilTag is visible
+        # Define control parameters
+        self.max_omega = math.radians(4.0)  # Maximum angular velocity in radians
+        self.min_omega = math.radians(2.0)  # Minimum angular velocity in radians
+        self.deadband = 0.5 # Deadband around zero angular velocity
+        self.high_friction_factor = 3  # Factor to increase omega for high ground friction
+        self.tag_visible = False  # Flag to indicate if AprilTag is visible
 
         # Start spinning until AprilTag is detected
         self.keep_spinning()
@@ -53,7 +53,7 @@ class TargetFollower:
     # Method to make the robot spin continuously
     def keep_spinning(self):
         while not self.tag_visible:
-            self.publish_cmd_vel(0.0, math.radians(2.0))  # Constant angular velocity for spinning
+            self.publish_cmd_vel(0.0, 2)  # Constant angular velocity for spinning
             rospy.sleep(0.1)  # Add a small delay to avoid consuming too much CPU
 
     # Method to move the robot to face the AprilTag at the desired position
