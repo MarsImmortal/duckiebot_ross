@@ -13,11 +13,11 @@ class Autopilot:
         self.ignore_apriltag = False
         self.stop_sign_distance_threshold = 0.2  # Set your desired threshold distance here (in meters)
         self.object_detection_min = 0.2  # Minimum distance threshold for object detection
-        self.object_detection_max = 0.4  # Maximum distance threshold for object detection
+        self.object_detection_max = 0.3  # Maximum distance threshold for object detection
 
-        self.ticks_per_90_degrees = 100  # Ticks per 90-degree turn (experimental value)
+        self.ticks_per_90_degrees = 70  # Ticks per 90-degree turn (experimental value)
         self.current_ticks = 0
-        self.start_ticks = 0  # New variable to track starting tick count
+        self.start_ticks = 0  # Variable to track starting tick count
         self.obstacle_detected = False
         self.handling_obstacle = False  # Flag to indicate obstacle handling
 
@@ -39,17 +39,14 @@ class Autopilot:
         if self.robot_state != "LANE_FOLLOWING" or self.ignore_apriltag or self.handling_obstacle:
             return
         
-        rospy.loginfo("AprilTag detections received.")
         self.move_robot(msg.detections)
  
     # Stop Robot before node has shut down. This ensures the robot does not keep moving with the latest velocity command
     def clean_shutdown(self):
-        rospy.loginfo("System shutting down. Stopping robot...")
         self.stop_robot()
 
     # Sends zero velocity to stop the robot
     def stop_robot(self):
-        rospy.loginfo("Sending stop command to robot.")
         cmd_msg = Twist2DStamped()
         cmd_msg.header.stamp = rospy.Time.now()
         cmd_msg.v = 0.0
@@ -57,7 +54,6 @@ class Autopilot:
         self.cmd_vel_pub.publish(cmd_msg)
 
     def set_state(self, state):
-        rospy.loginfo(f"Setting state to {state}.")
         self.robot_state = state
         state_msg = FSMState()
         state_msg.header.stamp = rospy.Time.now()
@@ -66,18 +62,13 @@ class Autopilot:
 
     def move_robot(self, detections):
         if len(detections) == 0:
-            rospy.loginfo("No AprilTags detected.")
             return
         
         # Process AprilTag info and publish a velocity
         for detection in detections:
-            rospy.loginfo(f"Detected AprilTag with ID: {detection.tag_id}")
             if detection.tag_id == 31:  # Assuming tag ID 31 is the stop sign
                 distance_to_tag = detection.transform.translation.z
-                rospy.loginfo(f"Distance to AprilTag (ID 31): {distance_to_tag} meters")
                 if distance_to_tag <= self.stop_sign_distance_threshold:
-                    rospy.loginfo("Stop sign within threshold distance. Stopping the robot...")
-                    
                     # Change state to stop lane following
                     self.set_state("NORMAL_JOYSTICK_CONTROL")
                     
@@ -103,7 +94,6 @@ class Autopilot:
 
                     # Resume lane following
                     self.set_state("LANE_FOLLOWING")
-                    rospy.loginfo("Resuming lane following...")
 
                     return
 
@@ -113,7 +103,6 @@ class Autopilot:
 
         # Check if the distance is within the desired range for object detection
         if self.object_detection_min <= msg.range <= self.object_detection_max:
-            rospy.loginfo(f"Obstacle detected at {msg.range} meters. Initiating avoidance maneuver...")
             self.obstacle_detected = True
             self.handling_obstacle = True  # Set flag to indicate obstacle handling
             self.set_state("CUSTOM_MANEUVER")
@@ -122,22 +111,17 @@ class Autopilot:
             self.obstacle_detected = False
 
     def avoid_obstacle(self):
-        rate = rospy.Rate(10)  # 10 Hz
-
         # Perform left 90-degree turn
-        rospy.loginfo("Performing left 90-degree turn.")
         self.turn_left()
 
-        # Move forward for 40 ticks
-        rospy.loginfo("Moving forward for 40 ticks.")
-        self.move_forward_ticks(40)
+        # Move forward for 70 ticks
+        self.move_forward_ticks(70)
 
         # Perform right 90-degree turn
-        rospy.loginfo("Performing right 90-degree turn.")
         self.turn_right()
-
+        
+        
         # Resume lane following
-        rospy.loginfo("Resuming lane following...")
         self.handling_obstacle = False  # Reset flag after handling obstacle
         self.set_state("LANE_FOLLOWING")
 
@@ -150,7 +134,7 @@ class Autopilot:
             cmd_msg.v = 0.0
             cmd_msg.omega = 3.0
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.1)
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
         self.stop_robot()  # Ensure the robot stops after turning
 
     def turn_right(self):
@@ -162,7 +146,7 @@ class Autopilot:
             cmd_msg.v = 0.0
             cmd_msg.omega = -3.0
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.1)
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
         self.stop_robot()  # Ensure the robot stops after turning
 
     def move_forward_ticks(self, ticks):
@@ -174,7 +158,7 @@ class Autopilot:
             cmd_msg.v = 0.3
             cmd_msg.omega = 0.0
             self.cmd_vel_pub.publish(cmd_msg)
-            rospy.sleep(0.1)
+            rospy.sleep(0.2)  # Increased sleep duration to reduce CPU usage
         self.stop_robot()  # Ensure the robot stops after moving forward
 
     # Wheel Encoder Callback
