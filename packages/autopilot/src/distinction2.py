@@ -118,13 +118,10 @@ class Autopilot:
         self.turn_left()
 
         # Move forward for 70 ticks
-        self.move_forward_ticks(70)
+        self.move_forward_ticks(40)
 
         # Perform right 90-degree turn
         self.turn_right()
-        
-        # Move forward for 40 ticks
-        self.move_forward_ticks(40)
         
         # Resume lane following
         self.handling_obstacle = False  # Reset flag after handling obstacle
