@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from duckietown_msgs.msg import Twist2DStamped
-from duckietown_msgs.msg import FSMState
-from duckietown_msgs.msg import AprilTagDetectionArray
-from duckietown_msgs.msg import WheelEncoderStamped
+from duckietown_msgs.msg import Twist2DStamped, FSMState, AprilTagDetectionArray, WheelEncoderStamped
 
 class Autopilot:
     def __init__(self):
@@ -25,7 +22,7 @@ class Autopilot:
         rospy.Subscriber('/oryx/right_wheel_encoder_node/tick', WheelEncoderStamped, self.encoder_callback, queue_size=1)
         ################################################################
 
-        rospy.spin() # Spin forever but listen to message callbacks
+        rospy.spin()  # Spin forever but listen to message callbacks
 
     # Apriltag Detection Callback
     def tag_callback(self, msg):
@@ -99,6 +96,11 @@ class Autopilot:
                     rospy.loginfo("Resuming lane following...")
 
                     return
+
+    # Wheel Encoder Callback
+    def encoder_callback(self, msg):
+        # Process wheel encoder ticks if needed
+        pass
 
 if __name__ == '__main__':
     try:
