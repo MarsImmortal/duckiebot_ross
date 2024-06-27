@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 (testing for credentials)
 
 import rospy
 from duckietown_msgs.msg import Twist2DStamped
